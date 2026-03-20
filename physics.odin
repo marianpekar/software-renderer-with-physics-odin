@@ -1,5 +1,7 @@
 package main
 
+import "core:math"
+
 RigidBody :: struct {
     velocity: Vector3,
     acceleration: Vector3,
@@ -16,6 +18,7 @@ CollisionResult :: struct {
     hit: bool,
     normal: Vector3,
     depth: f32,
+    contactPoint: Vector3
 }
 
 ApplyForceAtPoint :: proc(model: ^Model, force: Vector3, contactPoint: Vector3) {
@@ -36,6 +39,8 @@ ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
         model.translation += model.rigidBody.velocity * deltaTime
         model.rigidBody.acceleration  = {}
 
+        ApplyGravitationalTorque(&model, models)
+
         model.rigidBody.angularVelocity += model.rigidBody.angularAcceleration * deltaTime
         model.rigidBody.angularVelocity *= ANGULAR_DRAG
 
@@ -47,6 +52,25 @@ ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
             model.rotationMatrix = Mat4Mul(delta, model.rotationMatrix)
         }
         model.rigidBody.angularAcceleration = {}
+    }
+}
+
+ApplyGravitationalTorque :: proc(model: ^Model, models: []Model) {
+    if model.rigidBody.isStatic do return
+
+    for &other in models {
+        result := GetCollisionResult(model, &other)
+        if !result.hit || result.normal.y > -0.5 do continue
+
+        rContact := model.translation - result.contactPoint
+        offset := Vector3{rContact.x, 0, rContact.z}
+        dist := Vector3Length(offset)
+        threshold := min(model.boxCollider.size.x, model.boxCollider.size.z) * model.scale * 0.51
+
+        if dist < threshold do continue
+
+        gravTorque := Vector3CrossProduct(rContact, GRAVITY)
+        model.rigidBody.angularAcceleration += gravTorque
     }
 }
 
@@ -141,16 +165,34 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
         minNormal = -minNormal
     }
 
+    cA := FindClosestPoint(b.translation, a.translation, axesA, colSizeA)
+    cB := FindClosestPoint(a.translation, b.translation, axesB, colSizeB)
+    contactPoint := (cA + cB) * 0.5
+
     return CollisionResult{
         hit = true, 
         normal = minNormal, 
-        depth = minDepth
+        depth = minDepth,
+        contactPoint = contactPoint
     }
 
     ProjectRadius :: proc(colSize: Vector3, axes: [3]Vector3, axis: Vector3) -> f32 {
     return colSize.x * abs(Vector3DotProduct(axes[0], axis)) +
            colSize.y * abs(Vector3DotProduct(axes[1], axis)) +
            colSize.z * abs(Vector3DotProduct(axes[2], axis))
+    }
+
+    FindClosestPoint :: proc(point: Vector3, center: Vector3, axes: [3]Vector3, size: Vector3) -> Vector3 {
+        d := point - center
+        result := center
+
+        for i in 0..<3 {
+            dist := Vector3DotProduct(d, axes[i])
+            dist = math.clamp(dist, -size[i], size[i])
+            result += axes[i] * dist
+        }
+
+        return result
     }
 }
 
