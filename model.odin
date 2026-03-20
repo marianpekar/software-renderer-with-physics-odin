@@ -26,22 +26,9 @@ LoadModel :: proc(meshPath: string, texturePath: cstring, isStatic: bool, color:
     }
 
     model.boxCollider.size = { 1.0, 1.0, 1.0 }
-
-    if isStatic {
-        FreezeModel(&model)
-    } else {
-        UnfreezeModel(&model)
-    }
+    model.rigidBody.isStatic = isStatic
 
     return model
-}
-
-FreezeModel :: proc(model: ^Model) {
-    model.rigidBody.isStatic = true
-}
-
-UnfreezeModel :: proc(model: ^Model) {
-    model.rigidBody.isStatic = false
 }
 
 RotateAround :: proc(model: ^Model, axis: Vector3, angle: f32) {
