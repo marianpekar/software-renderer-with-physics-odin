@@ -15,8 +15,7 @@ CastRay :: proc(screenX, screenY: f32, camera: Camera, models: []Model) -> RayHi
     closestDist := max(f32)
 
     for &model in models {
-        rotMat := model.rotationMatrix
-        axes := [3]Vector3{rotMat[0].xyz, rotMat[1].xyz, rotMat[2].xyz}
+        axes := [3]Vector3{model.rotationMatrix[0].xyz, model.rotationMatrix[1].xyz, model.rotationMatrix[2].xyz}
         center := model.translation
         size := model.boxCollider.size * model.scale
         delta := center - camera.position

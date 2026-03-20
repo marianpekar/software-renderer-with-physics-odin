@@ -3,6 +3,8 @@ package main
 RigidBody :: struct {
     velocity: Vector3,
     acceleration: Vector3,
+    angularVelocity: Vector3,
+    angularAcceleration: Vector3,
     isStatic: bool,
 }
 
@@ -16,6 +18,14 @@ CollisionResult :: struct {
     depth: f32,
 }
 
+ApplyForceAtPoint :: proc(model: ^Model, force: Vector3, contactPoint: Vector3) {
+    model.rigidBody.acceleration += force
+
+    r := contactPoint - model.translation
+    torque := Vector3CrossProduct(r, force)
+    model.rigidBody.angularAcceleration += {0, torque.y, 0}
+}
+
 ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
     for &model in models {
         if model.rigidBody.isStatic do continue
@@ -25,6 +35,18 @@ ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
         model.rigidBody.velocity *= LINEAR_DRAG
         model.translation += model.rigidBody.velocity * deltaTime
         model.rigidBody.acceleration  = {}
+
+        model.rigidBody.angularVelocity += model.rigidBody.angularAcceleration * deltaTime
+        model.rigidBody.angularVelocity *= ANGULAR_DRAG
+
+        avlength  := Vector3Length(model.rigidBody.angularVelocity)
+        if avlength > 1e-6 {
+            axis := model.rigidBody.angularVelocity / avlength
+            angle := avlength * deltaTime
+            delta := MakeRotationMatrixAxisAngle(axis, angle)
+            model.rotationMatrix = Mat4Mul(delta, model.rotationMatrix)
+        }
+        model.rigidBody.angularAcceleration = {}
     }
 }
 
@@ -69,11 +91,8 @@ ResolveCollisions :: proc(models: []Model) {
 }
 
 GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
-    rotA := a.rotationMatrix
-    rotB := b.rotationMatrix
-
-    axesA := [3]Vector3{rotA[0].xyz, rotA[1].xyz, rotA[2].xyz}
-    axesB := [3]Vector3{rotB[0].xyz, rotB[1].xyz, rotB[2].xyz}
+    axesA := [3]Vector3{a.rotationMatrix[0].xyz, a.rotationMatrix[1].xyz, a.rotationMatrix[2].xyz}
+    axesB := [3]Vector3{b.rotationMatrix[0].xyz, b.rotationMatrix[1].xyz, b.rotationMatrix[2].xyz}
 
     colSizeA := a.boxCollider.size * a.scale
     colSizeB := b.boxCollider.size * b.scale

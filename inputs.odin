@@ -53,7 +53,7 @@ HandleInputs :: proc(
             model^ = rayHit.model
 
             if poking {
-                model^.rigidBody.acceleration += rayHit.direction * pushForce
+                ApplyForceAtPoint(model^, rayHit.direction * pushForce, rayHit.position)
             } else if freezing && model^.rigidBody.isStatic {
                 UnfreezeModel(model^)
             } else if freezing && !model^.rigidBody.isStatic {

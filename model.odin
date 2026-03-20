@@ -45,7 +45,7 @@ UnfreezeModel :: proc(model: ^Model) {
 }
 
 RotateAround :: proc(model: ^Model, axis: Vector3, angle: f32) {
-    model.rotationMatrix = MakeRotationMatrixAxisAngle(axis, angle)
+    model.rotationMatrix = MakeRotationMatrixAxisAngle(axis, angle * DEG_TO_RAD)
 }
 
 ApplyTransformations :: proc(model: ^Model, camera: Camera) {
