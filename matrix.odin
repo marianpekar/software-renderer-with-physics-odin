@@ -136,4 +136,10 @@ GetAxesFromRotationMatrix :: proc(mat: Matrix4x4) -> [3]Vector3 {
         {mat[0][1], mat[1][1], mat[2][1]},
         {mat[0][2], mat[1][2], mat[2][2]},
     }
-} 
+}
+
+GetUpAxisFromRotationMatrix :: proc(mat: Matrix4x4) -> Vector3 {
+    return {
+        mat[0][1], mat[1][1], mat[2][1]                   
+    }
+}

@@ -26,7 +26,7 @@ ApplyForceAtPoint :: proc(model: ^Model, force: Vector3, contactPoint: Vector3) 
 
     r := contactPoint - model.translation
     torque := Vector3CrossProduct(r, force)
-    model.rigidBody.angularAcceleration += {0, torque.y, 0}
+    model.rigidBody.angularAcceleration += torque
 }
 
 ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
@@ -69,11 +69,16 @@ ApplyGravitationalTorque :: proc(model: ^Model, models: []Model) {
         halfX := other.boxCollider.size.x * other.scale
         halfZ := other.boxCollider.size.z * other.scale
 
-        if projX < halfX && projZ < halfZ do continue
-
-        rContact := model.translation - result.contactPoint
-        gravTorque := Vector3CrossProduct(rContact, GRAVITY)
-        model.rigidBody.angularAcceleration += gravTorque
+        if projX > halfX || projZ > halfZ {
+            rContact := model.translation - result.contactPoint
+            gravTorque := Vector3CrossProduct(rContact, GRAVITY)
+            model.rigidBody.angularAcceleration += gravTorque
+        } else {
+            if Vector3Length(model.rigidBody.velocity) > 0.5 do continue
+            localUp := GetUpAxisFromRotationMatrix(model.rotationMatrix)
+            correction := Vector3CrossProduct(localUp, WORLD_UP)
+            model.rigidBody.angularAcceleration += correction * STABILIZATION_STRENGTH
+        }
     }
 }
 
