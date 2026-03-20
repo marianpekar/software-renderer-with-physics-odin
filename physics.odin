@@ -62,13 +62,16 @@ ApplyGravitationalTorque :: proc(model: ^Model, models: []Model) {
         result := GetCollisionResult(model, &other)
         if !result.hit || result.normal.y > -0.5 do continue
 
+        otherAxes := GetAxesFromRotationMatrix(other.rotationMatrix)
+        center := model.translation - other.translation
+        projX := abs(Vector3DotProduct(center, otherAxes[0]))
+        projZ := abs(Vector3DotProduct(center, otherAxes[2]))
+        halfX := other.boxCollider.size.x * other.scale
+        halfZ := other.boxCollider.size.z * other.scale
+
+        if projX < halfX && projZ < halfZ do continue
+
         rContact := model.translation - result.contactPoint
-        offset := Vector3{rContact.x, 0, rContact.z}
-        dist := Vector3Length(offset)
-        threshold := min(model.boxCollider.size.x, model.boxCollider.size.z) * model.scale * 0.51
-
-        if dist < threshold do continue
-
         gravTorque := Vector3CrossProduct(rContact, GRAVITY)
         model.rigidBody.angularAcceleration += gravTorque
     }

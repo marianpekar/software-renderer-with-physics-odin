@@ -16,7 +16,9 @@ main :: proc() {
 
     cube.translation = {0.0, 2.0, 1.0}
     cube2.translation = {0.0, 1.0, 1.0}
-    cube3.translation = {0.0, -3.0, 1.0}
+    cube3.translation = {0.0, -5.0, 1.0}
+    cube.scale = 0.5
+    cube3.scale = 2.5
     RotateAround(&cube, {0, 1, 0}, 30)
     RotateAround(&cube2, {0, 1, 0}, 330)
     cube2.wireColor = rl.RED
