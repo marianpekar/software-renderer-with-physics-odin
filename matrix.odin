@@ -129,3 +129,11 @@ MakeRotationMatrixAxisAngle :: proc(axis: Vector3, angle: f32) -> Matrix4x4 {
         {0,           0,           0,           1},
     }
 }
+
+GetAxesFromRotationMatrix :: proc(mat: Matrix4x4) -> [3]Vector3 {
+    return {
+        {mat[0][0], mat[1][0], mat[2][0]},
+        {mat[0][1], mat[1][1], mat[2][1]},
+        {mat[0][2], mat[1][2], mat[2][2]},
+    }
+} 

@@ -91,8 +91,8 @@ ResolveCollisions :: proc(models: []Model) {
 }
 
 GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
-    axesA := [3]Vector3{a.rotationMatrix[0].xyz, a.rotationMatrix[1].xyz, a.rotationMatrix[2].xyz}
-    axesB := [3]Vector3{b.rotationMatrix[0].xyz, b.rotationMatrix[1].xyz, b.rotationMatrix[2].xyz}
+    axesA := GetAxesFromRotationMatrix(a.rotationMatrix)
+    axesB := GetAxesFromRotationMatrix(b.rotationMatrix)
 
     colSizeA := a.boxCollider.size * a.scale
     colSizeB := b.boxCollider.size * b.scale
