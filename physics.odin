@@ -74,7 +74,8 @@ ApplyGravitationalTorque :: proc(model: ^Model, models: []Model) {
             gravTorque := Vector3CrossProduct(rContact, GRAVITY)
             model.rigidBody.angularAcceleration += gravTorque
         } else {
-            if Vector3Length(model.rigidBody.velocity) > 0.5 do continue
+            if Vector3Length(model.rigidBody.velocity) > STABILIZATION_THRESHOLD do continue
+
             closestUp := GetClosestUpAxis(model.rotationMatrix)
             correction := Vector3CrossProduct(closestUp, WORLD_UP)
             model.rigidBody.angularAcceleration += correction * STABILIZATION_STRENGTH
