@@ -7,6 +7,7 @@ RigidBody :: struct {
     acceleration: Vector3,
     angularVelocity: Vector3,
     angularAcceleration: Vector3,
+    bounciness: f32,
     isStatic: bool,
 }
 
@@ -129,14 +130,14 @@ ResolveCollisions :: proc(models: []Model) {
                 if !a.rigidBody.isStatic {
                     velAlongNormal := Vector3DotProduct(a.rigidBody.velocity, result.normal)
                     if velAlongNormal > 0 {
-                        a.rigidBody.velocity -= result.normal * velAlongNormal
+                        a.rigidBody.velocity -= result.normal * velAlongNormal * a.rigidBody.bounciness
                     }
                 }
 
                 if !b.rigidBody.isStatic {
                     velAlongNormal := Vector3DotProduct(b.rigidBody.velocity, result.normal)
                     if velAlongNormal < 0 {
-                        b.rigidBody.velocity -= result.normal * velAlongNormal
+                        b.rigidBody.velocity -= result.normal * velAlongNormal * b.rigidBody.bounciness
                     }
                 }
             }
