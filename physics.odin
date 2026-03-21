@@ -75,11 +75,32 @@ ApplyGravitationalTorque :: proc(model: ^Model, models: []Model) {
             model.rigidBody.angularAcceleration += gravTorque
         } else {
             if Vector3Length(model.rigidBody.velocity) > 0.5 do continue
-            localUp := GetUpAxisFromRotationMatrix(model.rotationMatrix)
-            correction := Vector3CrossProduct(localUp, WORLD_UP)
+            closestUp := GetClosestUpAxis(model.rotationMatrix)
+            correction := Vector3CrossProduct(closestUp, WORLD_UP)
             model.rigidBody.angularAcceleration += correction * STABILIZATION_STRENGTH
         }
     }
+}
+
+GetClosestUpAxis :: proc(rotationMatrix: Matrix4x4) -> Vector3 {
+    axes := GetAxesFromRotationMatrix(rotationMatrix)
+
+    closestAxis := axes[0]
+    closestDot := abs(Vector3DotProduct(axes[0], WORLD_UP))
+
+    for i in 1..<3 {
+        d := abs(Vector3DotProduct(axes[i], WORLD_UP))
+        if d > closestDot {
+            closestDot  = d
+            closestAxis = axes[i]
+        }
+    }
+
+    if Vector3DotProduct(closestAxis, WORLD_UP) < 0 {
+        closestAxis = -closestAxis
+    }
+
+    return closestAxis
 }
 
 ResolveCollisions :: proc(models: []Model) {
