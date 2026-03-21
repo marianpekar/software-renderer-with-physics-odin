@@ -36,13 +36,17 @@ ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
 
         model.rigidBody.acceleration += GRAVITY
         model.rigidBody.velocity += model.rigidBody.acceleration * deltaTime
-        model.rigidBody.velocity *= LINEAR_DRAG
-        model.translation += model.rigidBody.velocity * deltaTime
         model.rigidBody.acceleration  = {}
+        model.rigidBody.velocity *= LINEAR_DRAG
+        
+        if Vector3Length(model.rigidBody.velocity) > MIN_VELOCITY_THRESHOLD {
+            model.translation += model.rigidBody.velocity * deltaTime
+        }
 
         ApplyGravitationalTorque(&model, models)
 
         model.rigidBody.angularVelocity += model.rigidBody.angularAcceleration * deltaTime
+        model.rigidBody.angularAcceleration = {}
         model.rigidBody.angularVelocity *= ANGULAR_DRAG
 
         avlength  := Vector3Length(model.rigidBody.angularVelocity)
@@ -52,7 +56,6 @@ ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
             delta := MakeRotationMatrixAxisAngle(axis, angle)
             model.rotationMatrix = Mat4Mul(delta, model.rotationMatrix)
         }
-        model.rigidBody.angularAcceleration = {}
     }
 }
 
