@@ -130,19 +130,24 @@ ResolveCollisions :: proc(models: []Model) {
                     b.translation += correction
                 }
 
-                if !a.rigidBody.isStatic {
-                    velAlongNormal := Vector3DotProduct(a.rigidBody.velocity, result.normal)
-                    if velAlongNormal > 0 {
-                        a.rigidBody.velocity -= result.normal * velAlongNormal * a.rigidBody.bounciness
-                    }
-                }
+                Push(a, result)
+                Push(b, result, true)
+            }
+        }
+    }
 
-                if !b.rigidBody.isStatic {
-                    velAlongNormal := Vector3DotProduct(b.rigidBody.velocity, result.normal)
-                    if velAlongNormal < 0 {
-                        b.rigidBody.velocity -= result.normal * velAlongNormal * b.rigidBody.bounciness
-                    }
-                }
+    Push :: proc(m: ^Model, r: CollisionResult, flip: bool = false) {
+        if m.rigidBody.isStatic do return
+
+        velAlongNormal := Vector3DotProduct(m.rigidBody.velocity, r.normal)
+        if flip ? velAlongNormal < 0 : velAlongNormal > 0 {
+
+            misalignment := abs(Vector3DotProduct(GetClosestUpAxis(m.rotationMatrix), WORLD_UP))
+
+            if misalignment < MISALIGNMENT_NO_BOUNCE_THRESHOLD {
+                m.rigidBody.velocity -= r.normal * velAlongNormal
+            } else {
+                m.rigidBody.velocity -= r.normal * velAlongNormal * m.rigidBody.bounciness * misalignment
             }
         }
     }

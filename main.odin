@@ -10,7 +10,7 @@ ProjectionType :: enum {
 main :: proc() {
     rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Renderer")
 
-    cube := LoadModel("assets/cube.obj", "assets/box.png", false, bounciness = 1.6)
+    cube := LoadModel("assets/cube.obj", "assets/box.png", false, bounciness = 1.9)
     cube2 := LoadModel("assets/cube.obj", "assets/box.png", false, bounciness = 1.3)
     cube3 := LoadModel("assets/cube.obj", "assets/box.png", true)
 
