@@ -14,7 +14,14 @@ Model :: struct {
     boxCollider: BoxCollider
 }
 
-LoadModel :: proc(meshPath: string, texturePath: cstring, isStatic: bool, bounciness: f32 = 1.0, color: rl.Color = rl.WHITE) -> Model {
+LoadModel :: proc(
+    meshPath: string,
+    texturePath: cstring,
+    isStatic: bool,
+    bounciness: f32 = 1.0, 
+    friction: f32 = 0.97,
+    color: rl.Color = rl.WHITE
+) -> Model {
     model := Model{
         mesh = LoadMeshFromObjFile(meshPath),
         texture = LoadTextureFromFile(texturePath),
@@ -27,6 +34,7 @@ LoadModel :: proc(meshPath: string, texturePath: cstring, isStatic: bool, bounci
 
     model.boxCollider.size = { 1.0, 1.0, 1.0 }
     model.rigidBody.bounciness = bounciness
+    model.rigidBody.friction = friction
     model.rigidBody.isStatic = isStatic
 
     return model

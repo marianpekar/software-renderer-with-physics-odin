@@ -8,6 +8,7 @@ RigidBody :: struct {
     angularVelocity: Vector3,
     angularAcceleration: Vector3,
     bounciness: f32,
+    friction: f32,
     isStatic: bool,
 }
 
@@ -36,7 +37,7 @@ ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
 
         model.rigidBody.acceleration += GRAVITY
         model.rigidBody.velocity += model.rigidBody.acceleration * deltaTime
-        model.rigidBody.acceleration  = {}
+        model.rigidBody.acceleration = {}
         model.rigidBody.velocity *= LINEAR_DRAG
         
         if Vector3Length(model.rigidBody.velocity) > MIN_VELOCITY_THRESHOLD {
@@ -44,13 +45,14 @@ ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
         }
 
         ApplyGravitationalTorque(&model, models)
+        ApplyStabilization(&model, models)
 
         model.rigidBody.angularVelocity += model.rigidBody.angularAcceleration * deltaTime
         model.rigidBody.angularAcceleration = {}
         model.rigidBody.angularVelocity *= ANGULAR_DRAG
 
         avlength  := Vector3Length(model.rigidBody.angularVelocity)
-        if avlength > 1e-6 {
+        if avlength > MIN_ANGULAR_VELOCITY_THRESHOLD {
             axis := model.rigidBody.angularVelocity / avlength
             angle := avlength * deltaTime
             delta := MakeRotationMatrixAxisAngle(axis, angle)
@@ -81,13 +83,30 @@ ApplyGravitationalTorque :: proc(model: ^Model, models: []Model) {
             if overhangX > 1e-6 do gravTorque.x -= overhangX
             if overhangZ > 1e-6 do gravTorque.z -= overhangZ
             model.rigidBody.angularAcceleration += Vector3Normalize(gravTorque) * TIPPING_STRENGTH
-        } else {
-            if Vector3Length(model.rigidBody.velocity) > STABILIZATION_THRESHOLD do continue
-
-            closestUp := GetClosestUpAxis(model.rotationMatrix, -result.normal)
-            correction := Vector3CrossProduct(closestUp, -result.normal)
-            model.rigidBody.angularAcceleration += correction * STABILIZATION_STRENGTH
         }
+    }
+}
+
+ApplyStabilization :: proc(model: ^Model, models: []Model) {
+    for &other in models {
+        if &other == model do continue
+
+        model.translation.y -= GROUND_PROBE_DIST
+        result := GetCollisionResult(model, &other)
+        model.translation.y += GROUND_PROBE_DIST
+
+        if !result.hit do continue
+
+        avgFriction := (model.rigidBody.friction + other.rigidBody.friction) / 2.0
+        model.rigidBody.velocity.x *= avgFriction
+        model.rigidBody.velocity.z *= avgFriction
+        model.rigidBody.angularAcceleration.y *= avgFriction
+
+        closestUp := GetClosestUpAxis(model.rotationMatrix, result.normal)
+        correction := Vector3CrossProduct(closestUp, result.normal)
+        model.rigidBody.angularAcceleration += correction * STABILIZATION_STRENGTH
+
+        return
     }
 }
 
