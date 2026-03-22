@@ -84,28 +84,28 @@ ApplyGravitationalTorque :: proc(model: ^Model, models: []Model) {
         } else {
             if Vector3Length(model.rigidBody.velocity) > STABILIZATION_THRESHOLD do continue
 
-            closestUp := GetClosestUpAxis(model.rotationMatrix)
-            correction := Vector3CrossProduct(closestUp, WORLD_UP)
+            closestUp := GetClosestUpAxis(model.rotationMatrix, -result.normal)
+            correction := Vector3CrossProduct(closestUp, -result.normal)
             model.rigidBody.angularAcceleration += correction * STABILIZATION_STRENGTH
         }
     }
 }
 
-GetClosestUpAxis :: proc(rotationMatrix: Matrix4x4) -> Vector3 {
+GetClosestUpAxis :: proc(rotationMatrix: Matrix4x4, referenceUp: Vector3) -> Vector3 {
     axes := GetAxesFromRotationMatrix(rotationMatrix)
 
     closestAxis := axes[0]
-    closestDot := abs(Vector3DotProduct(axes[0], WORLD_UP))
+    closestDot := abs(Vector3DotProduct(axes[0], referenceUp))
 
     for i in 1..<3 {
-        d := abs(Vector3DotProduct(axes[i], WORLD_UP))
+        d := abs(Vector3DotProduct(axes[i], referenceUp))
         if d > closestDot {
             closestDot  = d
             closestAxis = axes[i]
         }
     }
 
-    if Vector3DotProduct(closestAxis, WORLD_UP) < 0 {
+    if Vector3DotProduct(closestAxis, referenceUp) < 0 {
         closestAxis = -closestAxis
     }
 
@@ -146,7 +146,7 @@ ResolveCollisions :: proc(models: []Model) {
         velAlongNormal := Vector3DotProduct(m.rigidBody.velocity, r.normal)
         if flip ? velAlongNormal < 0 : velAlongNormal > 0 {
 
-            misalignment := abs(Vector3DotProduct(GetClosestUpAxis(m.rotationMatrix), WORLD_UP))
+            misalignment := abs(Vector3DotProduct(GetClosestUpAxis(m.rotationMatrix, WORLD_UP), WORLD_UP))
 
             if misalignment < MISALIGNMENT_NO_BOUNCE_THRESHOLD {
                 m.rigidBody.velocity -= r.normal * velAlongNormal
