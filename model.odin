@@ -14,22 +14,27 @@ Model :: struct {
     boxCollider: BoxCollider
 }
 
-LoadModel :: proc(meshPath: string, texturePath: cstring, isStatic: bool, bounciness: f32 = 1.0, color: rl.Color = rl.WHITE, wireColor: rl.Color = rl.GREEN) -> Model {
+LoadModel :: proc(meshPath: string, texturePath: cstring, isStatic: bool, bounciness: f32 = 1.0, color: rl.Color = rl.WHITE) -> Model {
     model := Model{
         mesh = LoadMeshFromObjFile(meshPath),
         texture = LoadTextureFromFile(texturePath),
-        color = color,
-        wireColor = wireColor,
         rotationMatrix = MakeRotationMatrix(0,0,0),
         translation = Vector3{0.0, 0.0, 0.0},
         scale = 1.0
     }
+
+    SetColor(&model, color)
 
     model.boxCollider.size = { 1.0, 1.0, 1.0 }
     model.rigidBody.bounciness = bounciness
     model.rigidBody.isStatic = isStatic
 
     return model
+}
+
+SetColor :: proc(model: ^Model, color: rl.Color) {
+    model.color = color
+    model.wireColor = color
 }
 
 RotateAround :: proc(model: ^Model, axis: Vector3, angle: f32) {

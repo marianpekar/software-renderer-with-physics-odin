@@ -10,27 +10,28 @@ ProjectionType :: enum {
 main :: proc() {
     rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Renderer")
 
-    cube := LoadModel("assets/cube.obj", "assets/box.png", false, bounciness = 1.9)
-    cube2 := LoadModel("assets/cube.obj", "assets/box.png", false, bounciness = 1.3)
-    cube3 := LoadModel("assets/cube.obj", "assets/box.png", true)
+    cubeS := LoadModel("assets/cube.obj", "assets/box.png", isStatic = false, bounciness = 1.9, color = rl.RED)
+    cubeM := LoadModel("assets/cube.obj", "assets/box.png", isStatic = false, bounciness = 1.6, color = rl.GREEN)
+    cubeL := LoadModel("assets/cube.obj", "assets/box.png", isStatic = false, bounciness = 1.3, color = rl.BLUE)
+    cubeFloor := LoadModel("assets/cube.obj", "assets/box.png", isStatic = true)
 
-    cube.translation = {0.0, 2.0, 1.0}
-    cube2.translation = {0.0, 1.0, 1.0}
-    cube3.translation = {0.0, -5.0, 1.0}
-    cube.scale = 0.5
-    cube3.scale = 2.5
-    RotateAround(&cube, {0, 1, 0}, 30)
-    RotateAround(&cube2, {0, 1, 0}, 330)
-    cube2.wireColor = rl.RED
-    cube3.wireColor = rl.BLUE
+    cubeS.translation = {0.0, 3.0, 1.0}
+    cubeM.translation = {0.0, 2.0, 1.0}
+    cubeL.translation = {0.0, 1.0, 1.0}
+    cubeFloor.translation = {0.0, -5.0, 1.0}
+    cubeM.scale = 0.5
+    cubeS.scale = 0.3
+    cubeFloor.scale = 2.5
+    RotateAround(&cubeL, {0, 1, 0}, 30)
+    RotateAround(&cubeM, {0, 1, 0}, 330)
 
-    models := []Model{cube, cube2, cube3}
+    models := []Model{cubeS, cubeM, cubeL, cubeFloor}
 
     camera := MakeCamera({0.0, 0.0, -3.0}, {0.0, -1.0, 0.0})
 
-    red_light  := MakeLight({-1.0, 2.0, -5.0}, { 1.0,  1.0, 0.0}, {1.0, 0.0, 0.0, 1.0})
-    green_light := MakeLight({ 1.0, -2.0, -5.0}, {-1.0, -1.0, 0.0}, {0.0, 1.0, 0.0, 1.0})
-    lights := []Light{red_light, green_light}
+    light  := MakeLight({-1.0, 2.0, -5.0}, { 1.0,  1.0, 0.0}, {0.0, 0.1, 1.0, 1.0})
+    light2 := MakeLight({ 1.0, -2.0, -5.0}, {-1.0, -1.0, 0.0}, {0.0, 1.0, 0.0, 1.0})
+    lights := []Light{light, light2}
 
     ambient := Vector3{0.2, 0.2, 0.2}
     ambient2 := Vector3{0.1, 0.1, 0.2}
@@ -81,9 +82,9 @@ main :: proc() {
             switch renderMode {
                 case 0: DrawWireframe(model.mesh.transformedVertices, model.mesh.triangles, projectionMatrix, projectionType, model.wireColor, false, &renderImage)
                 case 1: DrawWireframe(model.mesh.transformedVertices, model.mesh.triangles, projectionMatrix, projectionType, model.wireColor, true, &renderImage)
-                case 2: DrawUnlit(model.mesh.transformedVertices, model.mesh.triangles, projectionMatrix, projectionType, rl.WHITE, zBuffer, &renderImage)
-                case 3: DrawFlatShaded(model.mesh.transformedVertices, model.mesh.triangles, projectionMatrix, projectionType, lights, rl.WHITE, zBuffer, &renderImage, ambient)
-                case 4: DrawPhongShaded(model.mesh.transformedVertices, model.mesh.triangles, model.mesh.transformedNormals, lights, rl.WHITE, zBuffer, projectionMatrix, projectionType, &renderImage, ambient2)
+                case 2: DrawUnlit(model.mesh.transformedVertices, model.mesh.triangles, projectionMatrix, projectionType, model.color, zBuffer, &renderImage)
+                case 3: DrawFlatShaded(model.mesh.transformedVertices, model.mesh.triangles, projectionMatrix, projectionType, lights, model.color, zBuffer, &renderImage, ambient)
+                case 4: DrawPhongShaded(model.mesh.transformedVertices, model.mesh.triangles, model.mesh.transformedNormals, lights, model.color, zBuffer, projectionMatrix, projectionType, &renderImage, ambient2)
                 case 5: DrawTexturedUnlit(model.mesh.transformedVertices, model.mesh.triangles, model.mesh.uvs, model.texture, zBuffer, projectionMatrix, projectionType, &renderImage)
                 case 6: DrawTexturedFlatShaded(model.mesh.transformedVertices, model.mesh.triangles, model.mesh.uvs, lights, model.texture, zBuffer, projectionMatrix, projectionType, &renderImage, ambient)
                 case 7: DrawTexturedPhongShaded(model.mesh.transformedVertices, model.mesh.triangles, model.mesh.uvs, model.mesh.transformedNormals, lights, model.texture, zBuffer, projectionMatrix, projectionType, &renderImage, ambient2)
