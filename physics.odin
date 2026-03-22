@@ -72,10 +72,14 @@ ApplyGravitationalTorque :: proc(model: ^Model, models: []Model) {
         projZ := abs(Vector3DotProduct(center, otherAxes[2]))
         halfX := other.boxCollider.size.x * other.scale
         halfZ := other.boxCollider.size.z * other.scale
+        overhangX := projX - halfX
+        overhangZ := projZ - halfZ 
 
-        if projX > halfX || projZ > halfZ {
+        if overhangX > 1e-6 || overhangZ > 1e-6  {
             rContact := model.translation - result.contactPoint
             gravTorque := Vector3CrossProduct(rContact, GRAVITY)
+            if overhangX > 1e-6 do gravTorque.x -= overhangX
+            if overhangZ > 1e-6 do gravTorque.z -= overhangZ
             model.rigidBody.angularAcceleration += gravTorque * TIPPING_STRENGTH
         } else {
             if Vector3Length(model.rigidBody.velocity) > STABILIZATION_THRESHOLD do continue
