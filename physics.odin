@@ -36,6 +36,9 @@ ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
         if model.rigidBody.isStatic do continue
 
         model.rigidBody.acceleration += GRAVITY
+
+        ApplyStabilization(&model, models)
+
         model.rigidBody.velocity += model.rigidBody.acceleration * deltaTime
         model.rigidBody.acceleration = {}
         model.rigidBody.velocity *= LINEAR_DRAG
@@ -45,7 +48,6 @@ ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
         }
 
         ApplyGravitationalTorque(&model, models)
-        ApplyStabilization(&model, models)
 
         model.rigidBody.angularVelocity += model.rigidBody.angularAcceleration * deltaTime
         model.rigidBody.angularAcceleration = {}
@@ -98,8 +100,8 @@ ApplyStabilization :: proc(model: ^Model, models: []Model) {
         if !result.hit do continue
 
         avgFriction := (model.rigidBody.friction + other.rigidBody.friction) / 2.0
-        model.rigidBody.velocity.x *= avgFriction
-        model.rigidBody.velocity.z *= avgFriction
+        model.rigidBody.acceleration.x *= avgFriction
+        model.rigidBody.acceleration.z *= avgFriction
         model.rigidBody.angularAcceleration.y *= avgFriction
 
         closestUp := GetClosestUpAxis(model.rotationMatrix, result.normal)
