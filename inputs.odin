@@ -10,13 +10,13 @@ HandleInputs :: proc(
     deltaTime: f32
 ) {
     linearForce: f32 = (rl.IsKeyDown(rl.KeyboardKey.LEFT_SHIFT) ? 150 : 75) * deltaTime
-    if rl.IsKeyDown(rl.KeyboardKey.W) do model^.rigidBody.acceleration.z += linearForce
-    if rl.IsKeyDown(rl.KeyboardKey.S) do model^.rigidBody.acceleration.z -= linearForce
-    if rl.IsKeyDown(rl.KeyboardKey.A) do model^.rigidBody.acceleration.x += linearForce
-    if rl.IsKeyDown(rl.KeyboardKey.D) do model^.rigidBody.acceleration.x -= linearForce
+    if rl.IsKeyDown(rl.KeyboardKey.W) do model^.rigidBody.force.z += linearForce
+    if rl.IsKeyDown(rl.KeyboardKey.S) do model^.rigidBody.force.z -= linearForce
+    if rl.IsKeyDown(rl.KeyboardKey.A) do model^.rigidBody.force.x += linearForce
+    if rl.IsKeyDown(rl.KeyboardKey.D) do model^.rigidBody.force.x -= linearForce
 
     linearForceUp: f32 = (rl.IsKeyDown(rl.KeyboardKey.LEFT_SHIFT) ? 2000 : 1000) * deltaTime
-    if rl.IsKeyDown(rl.KeyboardKey.SPACE) do model^.rigidBody.acceleration.y += linearForceUp
+    if rl.IsKeyDown(rl.KeyboardKey.SPACE) do model^.rigidBody.force.y += linearForceUp
 
     linearStep: f32 = (rl.IsKeyDown(rl.KeyboardKey.LEFT_SHIFT) ? 0.25 : 1) * deltaTime
     if rl.IsKeyDown(rl.KeyboardKey.KP_ADD) do model^.scale += linearStep
@@ -53,7 +53,7 @@ HandleInputs :: proc(
             model^ = rayHit.model
 
             if poking {
-                ApplyForceAtPoint(model^, rayHit.direction * pushForce, rayHit.position)
+                AddForceAtPoint(model^, rayHit.direction * pushForce, rayHit.position)
             }
             else if freezing {
                 model^.rigidBody.isStatic = !model^.rigidBody.isStatic

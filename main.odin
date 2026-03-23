@@ -10,9 +10,9 @@ ProjectionType :: enum {
 main :: proc() {
     rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Renderer")
 
-    cubeS := LoadModel("assets/cube.obj", "assets/box.png", isStatic = false, bounciness = 1.9, color = rl.RED)
-    cubeM := LoadModel("assets/cube.obj", "assets/box.png", isStatic = false, bounciness = 1.6, color = rl.GREEN)
-    cubeL := LoadModel("assets/cube.obj", "assets/box.png", isStatic = false, bounciness = 1.3, color = rl.BLUE)
+    cubeS := LoadModel("assets/cube.obj", "assets/box.png", isStatic = false, bounciness = 1.9, mass = 1.0, color = rl.RED)
+    cubeM := LoadModel("assets/cube.obj", "assets/box.png", isStatic = false, bounciness = 1.6, mass = 3.0, color = rl.GREEN)
+    cubeL := LoadModel("assets/cube.obj", "assets/box.png", isStatic = false, bounciness = 1.3, mass = 5.0, color = rl.BLUE)
     cubeFloor := LoadModel("assets/cube.obj", "assets/box.png", isStatic = true)
 
     cubeS.translation = {0.0, 3.0, 1.0}

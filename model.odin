@@ -20,6 +20,7 @@ LoadModel :: proc(
     isStatic: bool,
     bounciness: f32 = 1.0, 
     friction: f32 = 0.8,
+    mass: f32 = 1.0,
     color: rl.Color = rl.WHITE
 ) -> Model {
     model := Model{
@@ -33,6 +34,9 @@ LoadModel :: proc(
     SetColor(&model, color)
 
     model.boxCollider.size = { 1.0, 1.0, 1.0 }
+
+    model.rigidBody.mass = mass
+    model.rigidBody.invMass = 1.0 / mass
     model.rigidBody.bounciness = bounciness
     model.rigidBody.friction = friction
     model.rigidBody.isStatic = isStatic

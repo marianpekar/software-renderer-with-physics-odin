@@ -3,13 +3,15 @@ package main
 import "core:math"
 
 RigidBody :: struct {
+    force: Vector3,
     velocity: Vector3,
-    acceleration: Vector3,
+    torque: Vector3,
     angularVelocity: Vector3,
-    angularAcceleration: Vector3,
     bounciness: f32,
     friction: f32,
     isStatic: bool,
+    mass: f32,
+    invMass: f32
 }
 
 BoxCollider :: struct {
@@ -23,43 +25,24 @@ CollisionResult :: struct {
     contactPoint: Vector3
 }
 
-ApplyForceAtPoint :: proc(model: ^Model, force: Vector3, contactPoint: Vector3) {
-    model.rigidBody.acceleration += force
+AddForceAtPoint :: proc(model: ^Model, force: Vector3, contactPoint: Vector3) {
+    model.rigidBody.force += force
 
     r := contactPoint - model.translation
     torque := Vector3CrossProduct(r, force)
-    model.rigidBody.angularAcceleration += torque
+    model.rigidBody.torque += torque
 }
 
 ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
     for &model in models {
         if model.rigidBody.isStatic do continue
 
-        model.rigidBody.acceleration += GRAVITY
+        model.rigidBody.velocity += GRAVITY * deltaTime
 
         ApplyStabilization(&model, models)
-
-        model.rigidBody.velocity += model.rigidBody.acceleration * deltaTime
-        model.rigidBody.acceleration = {}
-        model.rigidBody.velocity *= LINEAR_DRAG
-        
-        if Vector3Length(model.rigidBody.velocity) > MIN_VELOCITY_THRESHOLD {
-            model.translation += model.rigidBody.velocity * deltaTime
-        }
-
+        IntegrateLinearForce(&model, deltaTime)
         ApplyGravitationalTorque(&model, models)
-
-        model.rigidBody.angularVelocity += model.rigidBody.angularAcceleration * deltaTime
-        model.rigidBody.angularAcceleration = {}
-        model.rigidBody.angularVelocity *= ANGULAR_DRAG
-
-        avlength  := Vector3Length(model.rigidBody.angularVelocity)
-        if avlength > MIN_ANGULAR_VELOCITY_THRESHOLD {
-            axis := model.rigidBody.angularVelocity / avlength
-            angle := avlength * deltaTime
-            delta := MakeRotationMatrixAxisAngle(axis, angle)
-            model.rotationMatrix = Mat4Mul(delta, model.rotationMatrix)
-        }
+        IntegrateTorque(&model, deltaTime)
     }
 }
 
@@ -84,7 +67,7 @@ ApplyGravitationalTorque :: proc(model: ^Model, models: []Model) {
             gravTorque := Vector3CrossProduct(rContact, GRAVITY)
             if overhangX > 1e-6 do gravTorque.x -= overhangX
             if overhangZ > 1e-6 do gravTorque.z -= overhangZ
-            model.rigidBody.angularAcceleration += Vector3Normalize(gravTorque) * TIPPING_STRENGTH
+            model.rigidBody.torque += Vector3Normalize(gravTorque) * model.rigidBody.mass * TIPPING_STRENGTH
         }
     }
 }
@@ -100,15 +83,39 @@ ApplyStabilization :: proc(model: ^Model, models: []Model) {
         if !result.hit do continue
 
         avgFriction := (model.rigidBody.friction + other.rigidBody.friction) / 2.0
-        model.rigidBody.acceleration.x *= avgFriction
-        model.rigidBody.acceleration.z *= avgFriction
-        model.rigidBody.angularAcceleration.y *= avgFriction
+        model.rigidBody.force.x *= avgFriction
+        model.rigidBody.force.z *= avgFriction
+        model.rigidBody.torque.y *= avgFriction
 
         closestUp := GetClosestUpAxis(model.rotationMatrix, result.normal)
         correction := Vector3CrossProduct(closestUp, result.normal)
-        model.rigidBody.angularAcceleration += correction * STABILIZATION_STRENGTH
+        model.rigidBody.torque += correction * STABILIZATION_STRENGTH
 
         return
+    }
+}
+
+IntegrateLinearForce :: proc(model: ^Model, deltaTime: f32) {
+    model.rigidBody.velocity += model.rigidBody.force * model.rigidBody.invMass * deltaTime
+    model.rigidBody.force = {}
+    model.rigidBody.velocity *= LINEAR_DRAG
+    
+    if Vector3Length(model.rigidBody.velocity) > MIN_VELOCITY_THRESHOLD {
+        model.translation += model.rigidBody.velocity * deltaTime
+    }
+}
+
+IntegrateTorque :: proc(model: ^Model, deltaTime: f32) {
+    model.rigidBody.angularVelocity += model.rigidBody.torque * model.rigidBody.invMass * deltaTime
+    model.rigidBody.torque = {}
+    model.rigidBody.angularVelocity *= ANGULAR_DRAG
+
+    avlength  := Vector3Length(model.rigidBody.angularVelocity)
+    if avlength > MIN_ANGULAR_VELOCITY_THRESHOLD {
+        axis := model.rigidBody.angularVelocity / avlength
+        angle := avlength * deltaTime
+        delta := MakeRotationMatrixAxisAngle(axis, angle)
+        model.rotationMatrix = Mat4Mul(delta, model.rotationMatrix)
     }
 }
 
