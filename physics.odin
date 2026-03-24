@@ -38,7 +38,7 @@ ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
         if model.rigidBody.isStatic do continue
 
         model.rigidBody.velocity += GRAVITY * deltaTime
-
+        
         ApplyStabilization(&model, models)
         IntegrateLinearForce(&model, deltaTime)
         ApplyGravitationalTorque(&model, models)
@@ -82,10 +82,7 @@ ApplyStabilization :: proc(model: ^Model, models: []Model) {
 
         if !result.hit do continue
 
-        avgFriction := (model.rigidBody.friction + other.rigidBody.friction) / 2.0
-        model.rigidBody.force.x *= avgFriction
-        model.rigidBody.force.z *= avgFriction
-        model.rigidBody.torque.y *= avgFriction
+        ApplyFriction(model, other)
 
         closestUp := GetClosestUpAxis(model.rotationMatrix, result.normal)
         correction := Vector3CrossProduct(closestUp, result.normal)
@@ -93,6 +90,13 @@ ApplyStabilization :: proc(model: ^Model, models: []Model) {
 
         return
     }
+}
+
+ApplyFriction :: proc(model: ^Model, other: Model) {
+    avgFriction := (model.rigidBody.friction + other.rigidBody.friction) / 2.0
+    model.rigidBody.force.x *= avgFriction
+    model.rigidBody.force.z *= avgFriction
+    model.rigidBody.torque.y *= avgFriction
 }
 
 IntegrateLinearForce :: proc(model: ^Model, deltaTime: f32) {
