@@ -185,14 +185,7 @@ ResolveCollisions :: proc(models: []Model) {
 
         velAlongNormal := Vector3DotProduct(m.rigidBody.velocity, r.normal)
         if flip ? velAlongNormal < 0 : velAlongNormal > 0 {
-
-            misalignment := abs(Vector3DotProduct(FindClosestUpAxis(m.rotationMatrix, WORLD_UP), WORLD_UP))
-
-            if misalignment < MISALIGNMENT_NO_BOUNCE_THRESHOLD {
-                m.rigidBody.velocity -= r.normal * velAlongNormal
-            } else {
-                m.rigidBody.velocity -= r.normal * velAlongNormal * m.rigidBody.bounciness * misalignment
-            }
+            m.rigidBody.velocity -= r.normal * velAlongNormal * m.rigidBody.bounciness
         }
     }
 }
