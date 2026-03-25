@@ -37,13 +37,37 @@ ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
     for &model in models {
         if model.rigidBody.isStatic do continue
 
-        model.rigidBody.velocity += GRAVITY * deltaTime
-        
+        ApplyGravity(&model, models, deltaTime)
         ApplyStabilization(&model, models)
         IntegrateLinearForce(&model, deltaTime)
         ApplyGravitationalTorque(&model, models)
         IntegrateTorque(&model, deltaTime)
     }
+}
+
+ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
+    for &other in models {
+        if &other == model do continue
+
+        model.translation.y -= GROUND_PROBE_DIST
+        result := GetCollisionResult(model, &other)
+        model.translation.y += GROUND_PROBE_DIST
+
+        otherAxes := GetAxesFromRotationMatrix(other.rotationMatrix)
+        center := model.translation - other.translation
+        projX := abs(Vector3DotProduct(center, otherAxes[0]))
+        projZ := abs(Vector3DotProduct(center, otherAxes[2]))
+        halfX := other.boxCollider.size.x * other.scale
+        halfZ := other.boxCollider.size.z * other.scale
+        overhangX := projX - halfX
+        overhangZ := projZ - halfZ
+
+        surfaceAngle := math.acos(abs(Vector3DotProduct(result.normal, WORLD_UP)))
+
+        if result.hit && overhangX <= 1e-6 && overhangZ <= 1e-6 && surfaceAngle < SLIDE_ANGLE_THRESHOLD do return
+    }
+
+    model.rigidBody.velocity += GRAVITY * deltaTime
 }
 
 ApplyGravitationalTorque :: proc(model: ^Model, models: []Model) {

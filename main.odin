@@ -24,6 +24,7 @@ main :: proc() {
     cubeFloor.scale = 2.5
     RotateAround(&cubeL, {0, 1, 0}, 30)
     RotateAround(&cubeM, {0, 1, 0}, 330)
+    RotateAround(&cubeFloor, {0, 1, 1}, 10)
 
     models := []Model{cubeS, cubeM, cubeL, cubeFloor}
 
