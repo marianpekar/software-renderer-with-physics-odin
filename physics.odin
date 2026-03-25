@@ -47,8 +47,6 @@ ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
 }
 
 ApplyGravitationalTorque :: proc(model: ^Model, models: []Model) {
-    if model.rigidBody.isStatic do return
-
     for &other in models {
         result := GetCollisionResult(model, &other)
         if !result.hit || result.normal.y > -0.5 do continue
