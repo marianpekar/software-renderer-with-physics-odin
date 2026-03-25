@@ -19,7 +19,7 @@ LoadModel :: proc(
     texturePath: cstring,
     isStatic: bool,
     bounciness: f32 = 1.0, 
-    friction: f32 = 0.8,
+    friction: f32 = 0.5,
     mass: f32 = 1.0,
     color: rl.Color = rl.WHITE
 ) -> Model {
