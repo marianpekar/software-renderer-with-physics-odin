@@ -38,87 +38,73 @@ ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
         if model.rigidBody.isStatic do continue
 
         ApplyGravity(&model, models, deltaTime)
-        ApplyStabilization(&model, models)
         IntegrateLinearForce(&model, deltaTime)
-        ApplyGravitationalTorque(&model, models)
         IntegrateTorque(&model, deltaTime)
     }
 }
 
 ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
+    isGrounded := false
+
     for &other in models {
         if &other == model do continue
 
         model.translation.y -= GROUND_PROBE_DIST
-        result := GetCollisionResult(model, &other)
+        probeResult := GetCollisionResult(model, &other)
         model.translation.y += GROUND_PROBE_DIST
 
-        otherAxes := GetAxesFromRotationMatrix(other.rotationMatrix)
-        center := model.translation - other.translation
-        projX := abs(Vector3DotProduct(center, otherAxes[0]))
-        projZ := abs(Vector3DotProduct(center, otherAxes[2]))
-        halfX := other.boxCollider.size.x * other.scale
-        halfZ := other.boxCollider.size.z * other.scale
-        overhangX := projX - halfX
-        overhangZ := projZ - halfZ
+        if probeResult.hit {
+            overhang := GetOverhang(model, other)
+            surfaceAngle := math.acos(abs(Vector3DotProduct(probeResult.normal, WORLD_UP)))
 
-        surfaceAngle := math.acos(abs(Vector3DotProduct(result.normal, WORLD_UP)))
+            ApplyFriction(model, other)
+            ApplyStabilization(model, probeResult.normal)
 
-        if result.hit && overhangX <= 1e-6 && overhangZ <= 1e-6 && surfaceAngle < SLIDE_ANGLE_THRESHOLD do return
-    }
+            if overhang.x <= 1e-6 && overhang.y <= 1e-6 && surfaceAngle < SLIDE_ANGLE_THRESHOLD {
+                isGrounded = true
+            }
 
-    model.rigidBody.velocity += GRAVITY * deltaTime
-}
-
-ApplyGravitationalTorque :: proc(model: ^Model, models: []Model) {
-    for &other in models {
-        result := GetCollisionResult(model, &other)
-        if !result.hit || result.normal.y > -0.5 do continue
-
-        otherAxes := GetAxesFromRotationMatrix(other.rotationMatrix)
-        center := model.translation - other.translation
-        projX := abs(Vector3DotProduct(center, otherAxes[0]))
-        projZ := abs(Vector3DotProduct(center, otherAxes[2]))
-        halfX := other.boxCollider.size.x * other.scale
-        halfZ := other.boxCollider.size.z * other.scale
-        overhangX := projX - halfX
-        overhangZ := projZ - halfZ 
-
-        if overhangX > 1e-6 || overhangZ > 1e-6  {
-            rContact := model.translation - result.contactPoint
-            gravTorque := Vector3CrossProduct(rContact, GRAVITY)
-            if overhangX > 1e-6 do gravTorque.x -= overhangX
-            if overhangZ > 1e-6 do gravTorque.z -= overhangZ
-            model.rigidBody.torque += Vector3Normalize(gravTorque) * model.rigidBody.mass * TIPPING_STRENGTH
+            if (overhang.x > 1e-6 || overhang.y > 1e-6) && probeResult.normal.y <= -0.5 {
+                ApplyTipping(model, probeResult.contactPoint, overhang)
+            }
+            break
         }
     }
-}
 
-ApplyStabilization :: proc(model: ^Model, models: []Model) {
-    for &other in models {
-        if &other == model do continue
-
-        model.translation.y -= GROUND_PROBE_DIST
-        result := GetCollisionResult(model, &other)
-        model.translation.y += GROUND_PROBE_DIST
-
-        if !result.hit do continue
-
-        ApplyFriction(model, other)
-
-        closestUp := GetClosestUpAxis(model.rotationMatrix, result.normal)
-        correction := Vector3CrossProduct(closestUp, result.normal)
-        model.rigidBody.torque += correction * STABILIZATION_STRENGTH
-
-        return
+    if !isGrounded {
+        model.rigidBody.velocity += GRAVITY * deltaTime
     }
-}
 
-ApplyFriction :: proc(model: ^Model, other: Model) {
-    avgFriction := (model.rigidBody.friction + other.rigidBody.friction) / 2.0
-    model.rigidBody.force.x *= avgFriction
-    model.rigidBody.force.z *= avgFriction
-    model.rigidBody.torque.y *= avgFriction
+    GetOverhang :: proc(model: ^Model, other: Model) -> Vector2 {
+        otherAxes := GetAxesFromRotationMatrix(other.rotationMatrix)
+        center := model.translation - other.translation
+        projX := abs(Vector3DotProduct(center, otherAxes[0]))
+        projZ := abs(Vector3DotProduct(center, otherAxes[2]))
+        halfX := other.boxCollider.size.x * other.scale
+        halfZ := other.boxCollider.size.z * other.scale
+        return { projX - halfX, projZ - halfZ }
+    }
+
+    ApplyFriction :: proc(model: ^Model, other: Model) {
+        avgFriction := (model.rigidBody.friction + other.rigidBody.friction) * 0.5
+        model.rigidBody.force.x *= avgFriction
+        model.rigidBody.force.z *= avgFriction
+        model.rigidBody.torque.y *= avgFriction
+    }
+
+    ApplyStabilization :: proc(model: ^Model, normal: Vector3) {
+        closestUp  := FindClosestUpAxis(model.rotationMatrix, normal)
+        correction := Vector3CrossProduct(closestUp, normal)
+        model.rigidBody.torque += correction * STABILIZATION_STRENGTH
+    }
+
+    ApplyTipping :: proc(model: ^Model, contactPoint: Vector3, overhang: Vector2) {
+        rContact := model.translation - contactPoint
+        gravTorque := Vector3CrossProduct(rContact, GRAVITY)
+        if overhang.x > 1e-6 do gravTorque.x -= overhang.x
+        if overhang.y > 1e-6 do gravTorque.z -= overhang.y
+        model.rigidBody.torque += Vector3Normalize(gravTorque) * model.rigidBody.mass * TIPPING_STRENGTH
+    }
 }
 
 IntegrateLinearForce :: proc(model: ^Model, deltaTime: f32) {
@@ -145,7 +131,7 @@ IntegrateTorque :: proc(model: ^Model, deltaTime: f32) {
     }
 }
 
-GetClosestUpAxis :: proc(rotationMatrix: Matrix4x4, referenceUp: Vector3) -> Vector3 {
+FindClosestUpAxis :: proc(rotationMatrix: Matrix4x4, referenceUp: Vector3) -> Vector3 {
     axes := GetAxesFromRotationMatrix(rotationMatrix)
 
     closestAxis := axes[0]
@@ -200,7 +186,7 @@ ResolveCollisions :: proc(models: []Model) {
         velAlongNormal := Vector3DotProduct(m.rigidBody.velocity, r.normal)
         if flip ? velAlongNormal < 0 : velAlongNormal > 0 {
 
-            misalignment := abs(Vector3DotProduct(GetClosestUpAxis(m.rotationMatrix, WORLD_UP), WORLD_UP))
+            misalignment := abs(Vector3DotProduct(FindClosestUpAxis(m.rotationMatrix, WORLD_UP), WORLD_UP))
 
             if misalignment < MISALIGNMENT_NO_BOUNCE_THRESHOLD {
                 m.rigidBody.velocity -= r.normal * velAlongNormal
