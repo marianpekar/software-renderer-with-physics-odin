@@ -10,23 +10,40 @@ ProjectionType :: enum {
 main :: proc() {
     rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Renderer")
 
-    cubeS := LoadModel("assets/cube.obj", "assets/box.png", isStatic = false, bounciness = 1.9, mass = 1.0, color = rl.RED)
-    cubeM := LoadModel("assets/cube.obj", "assets/box.png", isStatic = false, bounciness = 1.6, mass = 3.0, color = rl.GREEN)
-    cubeL := LoadModel("assets/cube.obj", "assets/box.png", isStatic = false, bounciness = 1.3, mass = 5.0, color = rl.BLUE)
-    cubeFloor := LoadModel("assets/cube.obj", "assets/box.png", isStatic = true)
+    sphereS := LoadModel("assets/sphere.obj", "assets/asphalt.png", rl.YELLOW)
+    AddRigidbody(&sphereS, isStatic = false, bounciness = 1.9, mass = 1.0)
+    AddSphereCollider(&sphereS)
 
-    cubeS.translation = {0.0, 3.0, 1.0}
+    sphereM := LoadModel("assets/sphere.obj", "assets/asphalt.png", rl.RED)
+    AddRigidbody(&sphereM, isStatic = false, bounciness = 1.7, mass = 2.0)
+    AddSphereCollider(&sphereM)
+
+    cubeM := LoadModel("assets/cube.obj", "assets/box.png", rl.GREEN)
+    AddRigidbody(&cubeM, isStatic = false, bounciness = 1.4, mass = 3.0)
+    AddBoxCollider(&cubeM)
+    
+    cubeL := LoadModel("assets/cube.obj", "assets/box.png", rl.BLUE)
+    AddRigidbody(&cubeL, isStatic = false, bounciness = 1.2, mass = 5.0)
+    AddBoxCollider(&cubeL)
+
+    cubeFloor := LoadModel("assets/cube.obj", "assets/box.png")
+    AddRigidbody(&cubeFloor, isStatic = true)
+    AddBoxCollider(&cubeFloor)
+
+    sphereS.translation = {1.0, 3.0, 1.0}
+    sphereM.translation = {1.0, 2.0, 1.0}
     cubeM.translation = {0.0, 2.0, 1.0}
     cubeL.translation = {0.0, 1.0, 1.0}
     cubeFloor.translation = {0.0, -5.0, 1.0}
+    sphereS.scale = 0.3
     cubeM.scale = 0.5
-    cubeS.scale = 0.3
+    sphereM.scale = 0.5
     cubeFloor.scale = 2.5
     RotateAround(&cubeL, {0, 1, 0}, 30)
     RotateAround(&cubeM, {0, 1, 0}, 330)
     RotateAround(&cubeFloor, {0, 1, 1}, 10)
 
-    models := []Model{cubeS, cubeM, cubeL, cubeFloor}
+    models := []Model{sphereS, sphereM, cubeM, cubeL, cubeFloor}
 
     camera := MakeCamera({0.0, 0.0, -3.0}, {0.0, -1.0, 0.0})
 

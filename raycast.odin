@@ -15,50 +15,76 @@ CastRay :: proc(screenX, screenY: f32, camera: Camera, models: []Model) -> RayHi
     closestDist := max(f32)
 
     for &model in models {
-        axes := GetAxesFromRotationMatrix(model.rotationMatrix)
-
         center := model.translation
-        size := model.boxCollider.size * model.scale
         delta := center - camera.position
 
-        tMin := -max(f32)
-        tMax :=  max(f32)
-        modelHit := true
+        if model.colliderType == ColliderType.Box {
+            axes := GetAxesFromRotationMatrix(model.rotationMatrix)
+            size := model.boxCollider.size * model.scale
 
-        for i in 0..<3 {
-            axis := axes[i]
-            e := Vector3DotProduct(axis, delta)
-            f := Vector3DotProduct(axis, rayDir)
+            tMin := -max(f32)
+            tMax :=  max(f32)
+            modelHit := true
 
-            if abs(f) > 1e-6 {
-                t1 := (e - size[i]) / f
-                t2 := (e + size[i]) / f
+            for i in 0..<3 {
+                axis := axes[i]
+                e := Vector3DotProduct(axis, delta)
+                f := Vector3DotProduct(axis, rayDir)
 
-                if t1 > t2 {
-                    t1, t2 = t2, t1 
-                }
+                if abs(f) > 1e-6 {
+                    t1 := (e - size[i]) / f
+                    t2 := (e + size[i]) / f
 
-                tMin = max(tMin, t1)
-                tMax = min(tMax, t2)
+                    if t1 > t2 {
+                        t1, t2 = t2, t1 
+                    }
 
-                if tMin > tMax || tMax < 0 {
-                    modelHit = false
-                    break
-                }
-            } else {
-                if -e - size[i] > 0 || -e + size[i] < 0 {
-                    modelHit = false
-                    break
+                    tMin = max(tMin, t1)
+                    tMax = min(tMax, t2)
+
+                    if tMin > tMax || tMax < 0 {
+                        modelHit = false
+                        continue
+                    }
+                } else {
+                    if -e - size[i] > 0 || -e + size[i] < 0 {
+                        modelHit = false
+                        continue
+                    }
                 }
             }
-        }
 
-        if modelHit && tMin < closestDist {
-            closestDist = tMin
-            hit.hit = true
-            hit.model = &model
-            hit.position = camera.position + rayDir * tMin
-            hit.direction = rayDir
+            if modelHit && tMin < closestDist {
+                closestDist = tMin
+                hit.hit = true
+                hit.model = &model
+                hit.position = camera.position + rayDir * tMin
+                hit.direction = rayDir
+            }
+
+        } 
+        else if model.colliderType == ColliderType.Sphere {
+            r := model.sphereCollider.radius * model.scale
+            r2 := r * r
+            tca := Vector3DotProduct(delta, rayDir)
+            d2 := Vector3DotProduct(delta, delta) - tca * tca
+            
+            if d2 > r2 {
+                continue
+            }
+
+            thc := math.sqrt(r2 - d2)
+            t1 := tca - thc
+            t2 := tca + thc
+            t := t1 < 0 ? t2 : t1
+
+            if t >= 0 && t < closestDist {
+                closestDist = t
+                hit.hit = true
+                hit.model = &model
+                hit.position = camera.position + rayDir * t
+                hit.direction = rayDir
+            }
         }
     }
 
