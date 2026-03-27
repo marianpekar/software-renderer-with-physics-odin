@@ -15,7 +15,7 @@ main :: proc() {
     AddSphereCollider(&sphereS)
 
     sphereM := LoadModel("assets/sphere.obj", "assets/asphalt.png", rl.RED)
-    AddRigidbody(&sphereM, isStatic = false, bounciness = 1.7, mass = 2.0)
+    AddRigidbody(&sphereM, isStatic = false, bounciness = 1.2, mass = 2.0)
     AddSphereCollider(&sphereM)
 
     cubeM := LoadModel("assets/cube.obj", "assets/box.png", rl.GREEN)
@@ -31,7 +31,7 @@ main :: proc() {
     AddBoxCollider(&cubeFloor)
 
     sphereS.translation = {1.0, 3.0, 1.0}
-    sphereM.translation = {1.0, 2.0, 1.0}
+    sphereM.translation = {0.0, 2.0, 1.0}
     cubeM.translation = {0.0, 2.0, 1.0}
     cubeL.translation = {0.0, 1.0, 1.0}
     cubeFloor.translation = {0.0, -5.0, 1.0}
@@ -41,7 +41,7 @@ main :: proc() {
     cubeFloor.scale = 2.5
     RotateAround(&cubeL, {0, 1, 0}, 30)
     RotateAround(&cubeM, {0, 1, 0}, 330)
-    RotateAround(&cubeFloor, {0, 1, 1}, 10)
+    RotateAround(&cubeFloor, {0, 1, 1}, 0)
 
     models := []Model{sphereS, sphereM, cubeM, cubeL, cubeFloor}
 

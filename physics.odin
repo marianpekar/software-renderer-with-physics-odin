@@ -46,18 +46,25 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
             overhang := GetOverhang(model, other)
             surfaceAngle := math.acos(abs(Vector3DotProduct(probeResult.normal, WORLD_UP)))
 
-            ApplyFriction(model, other)
-            ApplyStabilization(model, probeResult.normal)
+            if model.colliderType == ColliderType.Box {
+                ApplyFriction(model, other)
+                ApplyStabilization(model, probeResult.normal)
 
-            if overhang.x <= 1e-6 && overhang.y <= 1e-6 && surfaceAngle < SLIDE_ANGLE_THRESHOLD {
-                isGrounded = true
-            }
+                if overhang.x <= 1e-6 && overhang.y <= 1e-6 && surfaceAngle < SLIDE_ANGLE_THRESHOLD {
+                    isGrounded = true
+                }
 
-            if (overhang.x > 1e-6 || overhang.y > 1e-6) && probeResult.normal.y <= -0.5 {
-                ApplyTipping(model, probeResult.contactPoint, overhang)
+                if (overhang.x > 1e-6 || overhang.y > 1e-6) && probeResult.normal.y <= -0.5 {
+                    ApplyTipping(model, probeResult.contactPoint, overhang)
+                }
             }
+            
             break
         }
+    }
+
+    if model.colliderType == ColliderType.Sphere {
+        ApplyRolling(model)
     }
 
     if !isGrounded {
@@ -81,6 +88,17 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         model.rigidBody.torque.y *= avgFriction
     }
 
+    ApplyRolling :: proc(model: ^Model) {
+        speed := Vector3Length(model.rigidBody.velocity)
+        if speed > MIN_VELOCITY_THRESHOLD {
+            axis := Vector3CrossProduct(WORLD_UP, model.rigidBody.velocity / speed)
+            radius := model.sphereCollider.radius * model.scale
+            model.rigidBody.angularVelocity = axis * (speed / radius)
+        } else {
+            model.rigidBody.angularVelocity *= 0.1
+        }   
+    }
+
     ApplyStabilization :: proc(model: ^Model, normal: Vector3) {
         closestUp  := FindClosestUpAxis(model.rotationMatrix, normal)
         correction := Vector3CrossProduct(closestUp, normal)
@@ -99,7 +117,9 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
 IntegrateLinearForce :: proc(model: ^Model, deltaTime: f32) {
     model.rigidBody.velocity += model.rigidBody.force * model.rigidBody.invMass * deltaTime
     model.rigidBody.force = {}
-    model.rigidBody.velocity *= LINEAR_DRAG
+
+    drag := model.colliderType == ColliderType.Box ? LINEAR_DRAG : SPHERE_LINEAR_DRAG
+    model.rigidBody.velocity *= drag
     
     if Vector3Length(model.rigidBody.velocity) > MIN_VELOCITY_THRESHOLD {
         model.translation += model.rigidBody.velocity * deltaTime
@@ -109,7 +129,9 @@ IntegrateLinearForce :: proc(model: ^Model, deltaTime: f32) {
 IntegrateTorque :: proc(model: ^Model, deltaTime: f32) {
     model.rigidBody.angularVelocity += model.rigidBody.torque * model.rigidBody.invMass * deltaTime
     model.rigidBody.torque = {}
-    model.rigidBody.angularVelocity *= ANGULAR_DRAG
+
+    drag := model.colliderType == ColliderType.Box ? ANGULAR_DRAG : SPHERE_ANGULAR_DRAG
+    model.rigidBody.angularVelocity *= drag
 
     avlength  := Vector3Length(model.rigidBody.angularVelocity)
     if avlength > MIN_ANGULAR_VELOCITY_THRESHOLD {
