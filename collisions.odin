@@ -30,7 +30,7 @@ ResolveCollisions :: proc(models: []Model) {
             b := &models[j]
 
             if a.rigidBody.isStatic && b.rigidBody.isStatic do continue
-
+            
             result := GetCollisionResult(a, b)
 
             if result.hit {
@@ -45,6 +45,7 @@ ResolveCollisions :: proc(models: []Model) {
                     b.translation += correction
                 }
 
+                MoveStack(a, b, result)
                 Push(a, result)
                 Push(b, result, true)
             }
@@ -58,6 +59,39 @@ ResolveCollisions :: proc(models: []Model) {
         if flip ? velAlongNormal < 0 : velAlongNormal > 0 {
             m.rigidBody.velocity -= r.normal * velAlongNormal * m.rigidBody.bounciness
         }
+    }
+
+    MoveStack :: proc(a, b: ^Model, r: CollisionResult) {
+        a.rigidBody.isMovingBySupport = false
+        b.rigidBody.isMovingBySupport = false
+
+        if abs(Vector3DotProduct(r.normal, WORLD_UP)) < 0.7 do return
+
+        isABottom := Vector3DotProduct(r.normal, WORLD_UP) > 0
+        support := isABottom ? a : b
+        resting := isABottom ? b : a
+
+        if resting.rigidBody.isStatic do return
+
+        if support.translation.y >= resting.translation.y do return
+
+        supportNorm := Vector3DotProduct(support.rigidBody.velocity, r.normal)
+        restingNorm := Vector3DotProduct(resting.rigidBody.velocity, r.normal)
+        if supportNorm > restingNorm {
+            resting.rigidBody.velocity += r.normal * (supportNorm - restingNorm)
+        }
+
+        supportSpeed := Vector3Length(support.rigidBody.velocity)
+        if supportSpeed < MIN_VELOCITY_THRESHOLD do return
+
+        supportTan := support.rigidBody.velocity - r.normal * supportNorm
+        restingTan := resting.rigidBody.velocity - r.normal * restingNorm
+
+        avgFriction := (support.rigidBody.friction + resting.rigidBody.friction) * 0.5
+        resting.rigidBody.velocity += (supportTan - restingTan) * avgFriction
+        resting.rigidBody.angularVelocity.y = support.rigidBody.angularVelocity.y
+
+        resting.rigidBody.isMovingBySupport = true
     }
 }
 

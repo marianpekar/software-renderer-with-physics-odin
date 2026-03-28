@@ -11,7 +11,8 @@ RigidBody :: struct {
     friction: f32,
     isStatic: bool,
     mass: f32,
-    invMass: f32
+    invMass: f32,
+    isMovingBySupport: bool
 }
 
 AddForceAtPoint :: proc(model: ^Model, force: Vector3, contactPoint: Vector3) {
@@ -43,13 +44,13 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         model.translation.y += GROUND_PROBE_DIST
 
         if probeResult.hit {
-            overhang := GetOverhang(model, other)
-            surfaceAngle := math.acos(abs(Vector3DotProduct(probeResult.normal, WORLD_UP)))
-
             if model.colliderType == ColliderType.Box {
                 ApplyFriction(model, other)
                 ApplyStabilization(model, probeResult.normal)
 
+                overhang := GetOverhang(model, other)
+                surfaceAngle := math.acos(abs(Vector3DotProduct(probeResult.normal, WORLD_UP)))
+                
                 if overhang.x <= 1e-6 && overhang.y <= 1e-6 && surfaceAngle < SLIDE_ANGLE_THRESHOLD {
                     isGrounded = true
                 }
@@ -58,7 +59,7 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
                     ApplyTipping(model, probeResult.contactPoint, overhang)
                 }
             }
-            
+
             break
         }
     }
@@ -90,7 +91,7 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
 
     ApplyRolling :: proc(model: ^Model) {
         speed := Vector3Length(model.rigidBody.velocity)
-        if speed > MIN_VELOCITY_THRESHOLD {
+        if speed > MIN_VELOCITY_THRESHOLD && !model.rigidBody.isMovingBySupport {
             axis := Vector3CrossProduct(WORLD_UP, model.rigidBody.velocity / speed)
             radius := model.sphereCollider.radius * model.scale
             model.rigidBody.angularVelocity = axis * (speed / radius)
