@@ -31,7 +31,7 @@ main :: proc() {
     AddBoxCollider(&cubeFloor)
 
     sphereS.translation = {1.0, 3.0, 1.0}
-    sphereM.translation = {0.0, 2.0, 1.0}
+    sphereM.translation = {0.0, 4.0, 1.0}
     cubeM.translation = {0.0, 2.0, 1.0}
     cubeL.translation = {0.0, 1.0, 1.0}
     cubeFloor.translation = {0.0, -5.0, 1.0}
