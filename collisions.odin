@@ -32,33 +32,31 @@ ResolveCollisions :: proc(models: []Model) {
             if a.rigidBody.isStatic && b.rigidBody.isStatic do continue
             
             result := GetCollisionResult(a, b)
-
             if result.hit {
-                correction := result.normal * max(result.depth, 0.0)
-
-                if !a.rigidBody.isStatic && !b.rigidBody.isStatic {
-                    a.translation -= correction * 0.5
-                    b.translation += correction * 0.5
-                } else if !a.rigidBody.isStatic {
-                    a.translation -= correction
-                } else if !b.rigidBody.isStatic {
-                    b.translation += correction
-                }
-
+                Correct(a, b, result)
                 MoveStack(a, b, result)
                 Push(a, result)
-                Push(b, result, true)
             }
         }
     }
 
-    Push :: proc(m: ^Model, r: CollisionResult, flip: bool = false) {
+    Correct :: proc(a, b: ^Model, r: CollisionResult) {
+        correction := r.normal * max(r.depth, 0.0)
+
+        if !a.rigidBody.isStatic && !b.rigidBody.isStatic {
+            a.translation -= correction * 0.5
+            b.translation += correction * 0.5
+        } else if !a.rigidBody.isStatic {
+            a.translation -= correction
+        } else if !b.rigidBody.isStatic {
+            b.translation += correction
+        }
+    }
+
+    Push :: proc(m: ^Model, r: CollisionResult) {
         if m.rigidBody.isStatic do return
 
-        velAlongNormal := Vector3DotProduct(m.rigidBody.velocity, r.normal)
-        if flip ? velAlongNormal < 0 : velAlongNormal > 0 {
-            m.rigidBody.velocity -= r.normal * velAlongNormal * m.rigidBody.bounciness
-        }
+        m.rigidBody.velocity -= Vector3DotProduct(m.rigidBody.velocity, r.normal) * r.normal * m.rigidBody.bounciness
     }
 
     MoveStack :: proc(a, b: ^Model, r: CollisionResult) {
