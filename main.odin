@@ -47,8 +47,9 @@ main :: proc() {
 
     camera := MakeCamera({0.0, 0.0, -3.0}, {0.0, -1.0, 0.0})
 
-    light  := MakeLight({-1.0, 2.0, -5.0}, { 1.0,  1.0, 0.0}, {0.0, 0.1, 1.0, 1.0})
-    light2 := MakeLight({ 1.0, -2.0, -5.0}, {-1.0, -1.0, 0.0}, {0.0, 1.0, 0.0, 1.0})
+    viewMatrix := MakeViewMatrix(camera.position, camera.target)
+    light  := MakeLight({-2.0, 2.0, 1.0}, { 1.0,  1.0, 0.0}, {0.0, 0.1, 1.0, 1.0}, viewMatrix)
+    light2 := MakeLight({2.0, -2.0, 1.0}, {-1.0, -1.0, 0.0}, {0.0, 1.0, 0.0, 1.0}, viewMatrix)
     lights := []Light{light, light2}
 
     ambient := Vector3{0.2, 0.2, 0.2}
