@@ -115,12 +115,15 @@ MakeOrthographicMatrix :: proc(screenWidth: i32, screenHeight: i32, near: f32, f
 }
 
 MakeRotationMatrixAxisAngle :: proc(axis: Vector3, angle: f32) -> Matrix4x4 {
+    a := Vector3Normalize(axis)
+    x := a.x
+    y := a.y
+    z := a.z
+
     c := math.cos(angle)
     s := math.sin(angle)
+    
     t := 1.0 - c
-    x := axis.x
-    y := axis.y
-    z := axis.z
 
     return Matrix4x4{
         {t*x*x + c,   t*x*y - s*z, t*x*z + s*y, 0},
