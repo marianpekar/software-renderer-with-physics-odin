@@ -24,18 +24,20 @@ CollisionResult :: struct {
 }
 
 ResolveCollisions :: proc(models: []Model) {
-    for i in 0..<len(models) {
-        for j in i + 1..<len(models) {
-            a := &models[i]
-            b := &models[j]
+    for iter in 0..<SOLVER_ITERATIONS {
+        for i in 0..<len(models) {
+            for j in i + 1..<len(models) {
+                a := &models[i]
+                b := &models[j]
 
-            if a.rigidBody.isStatic && b.rigidBody.isStatic do continue
-            
-            result := GetCollisionResult(a, b)
-            if result.hit {
-                Correct(a, b, result)
-                MoveStack(a, b, result)
-                Push(a, result)
+                if a.rigidBody.isStatic && b.rigidBody.isStatic do continue
+                
+                result := GetCollisionResult(a, b)
+                if result.hit {
+                    Correct(a, b, result)
+                    MoveStack(a, b, result)
+                    Push(a, result)
+                }
             }
         }
     }
