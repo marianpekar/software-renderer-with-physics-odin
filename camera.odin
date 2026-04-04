@@ -10,7 +10,7 @@ Camera :: struct {
 
 MakeCamera :: proc(position, target: Vector3) -> Camera {
     forward := Vector3Normalize(target - position)
-    right := Vector3Normalize(Vector3CrossProduct(forward, Vector3{0, 1, 0}))
+    right := Vector3Normalize(Vector3CrossProduct(forward, WORLD_UP))
 
     return Camera {
         position = position,
