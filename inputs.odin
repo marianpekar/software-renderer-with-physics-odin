@@ -48,7 +48,7 @@ HandleInputs :: proc(
     }
 
     if poking || freezing {
-        rayHit := CastRay(f32(rl.GetMouseX()), f32(rl.GetMouseY()), camera, models)
+        rayHit := CastRay(f32(rl.GetMouseX()), f32(rl.GetMouseY()), camera, projType^, models)
         if rayHit.hit {
             model^ = rayHit.model
 
