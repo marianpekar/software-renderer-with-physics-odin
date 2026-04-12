@@ -8,11 +8,10 @@ ColliderType :: enum {
     Sphere
 }
 
-BoxCollider :: struct {
-    size: Vector3
-}
 
-SphereCollider :: struct {
+Collider :: struct {
+    type: ColliderType,
+    size: Vector3,
     radius: f32
 }
 
@@ -97,15 +96,15 @@ ResolveCollisions :: proc(models: []Model) {
 
 GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
     switch {
-        case a.colliderType == ColliderType.Box && b.colliderType == ColliderType.Box: 
+        case a.collider.type == ColliderType.Box && b.collider.type == ColliderType.Box: 
             return BoxBox(a, b)
-        case a.colliderType == ColliderType.Box && b.colliderType == ColliderType.Sphere:
+        case a.collider.type == ColliderType.Box && b.collider.type == ColliderType.Sphere:
             return BoxSphere(a, b)
-        case a.colliderType == ColliderType.Sphere && b.colliderType == ColliderType.Box:
+        case a.collider.type == ColliderType.Sphere && b.collider.type == ColliderType.Box:
             result := BoxSphere(b, a)
             result.normal = -result.normal
             return result
-        case a.colliderType == ColliderType.Sphere && b.colliderType == ColliderType.Sphere: 
+        case a.collider.type == ColliderType.Sphere && b.collider.type == ColliderType.Sphere: 
             return SphereSphere(a, b)
     }
     return {}
@@ -114,8 +113,8 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
         axesA := GetAxesFromRotationMatrix(a.rotationMatrix)
         axesB := GetAxesFromRotationMatrix(b.rotationMatrix)
 
-        colSizeA := a.boxCollider.size * a.scale
-        colSizeB := b.boxCollider.size * b.scale
+        colSizeA := a.collider.size * a.scale
+        colSizeB := b.collider.size * b.scale
 
         centerDiff := b.translation - a.translation
 
@@ -194,8 +193,8 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
 
     BoxSphere :: proc(a, b: ^Model) -> CollisionResult {
         axes := GetAxesFromRotationMatrix(a.rotationMatrix)
-        size := a.boxCollider.size * a.scale
-        radius := b.sphereCollider.radius * b.scale
+        size := a.collider.size * a.scale
+        radius := b.collider.radius * b.scale
         dirAB := b.translation - a.translation
         
         closestPoint := a.translation
@@ -224,8 +223,8 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
     }
 
     SphereSphere :: proc(a, b: ^Model) -> CollisionResult {
-        rA := a.sphereCollider.radius * a.scale
-        rB := b.sphereCollider.radius * b.scale
+        rA := a.collider.radius * a.scale
+        rB := b.collider.radius * b.scale
         diff := b.translation - a.translation
         dist := Vector3Length(diff)
         sum := rA + rB

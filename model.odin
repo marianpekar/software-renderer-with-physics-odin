@@ -11,9 +11,7 @@ Model :: struct {
     rotationMatrix: Matrix4x4,
     scale: f32,
     rigidBody: RigidBody,
-    sphereCollider: SphereCollider,
-    colliderType: ColliderType,
-    boxCollider: BoxCollider
+    collider: Collider
 }
 
 LoadModel :: proc(meshPath: string, texturePath: cstring, color: rl.Color = rl.WHITE) -> Model {
@@ -23,7 +21,7 @@ LoadModel :: proc(meshPath: string, texturePath: cstring, color: rl.Color = rl.W
         rotationMatrix = MakeRotationMatrix(0,0,0),
         translation = Vector3{0.0, 0.0, 0.0},
         scale = 1.0,
-        colliderType = ColliderType.None
+        collider = { type = ColliderType.None }
     }
 
     SetColor(&model, color)
@@ -40,13 +38,13 @@ AddRigidbody :: proc(model: ^Model, isStatic: bool, bounciness: f32 = 1.0, frict
 }
 
 AddBoxCollider :: proc(model: ^Model, size: Vector3 = { 1.0, 1.0, 1.0 }) {
-    model.colliderType = ColliderType.Box
-    model.boxCollider.size = size
+    model.collider.type = ColliderType.Box
+    model.collider.size = size
 }
 
 AddSphereCollider:: proc(model: ^Model, radius: f32 = 1.0) {
-    model.colliderType = ColliderType.Sphere
-    model.sphereCollider.radius = radius
+    model.collider.type = ColliderType.Sphere
+    model.collider.radius = radius
 }
 
 SetColor :: proc(model: ^Model, color: rl.Color) {

@@ -23,9 +23,9 @@ CastRay :: proc(screenX, screenY: f32, camera: Camera, projType: ProjectionType,
         center := model.translation
         delta := center - rayOrigin
 
-        if model.colliderType == ColliderType.Box {
+        if model.collider.type == ColliderType.Box {
             axes := GetAxesFromRotationMatrix(model.rotationMatrix)
-            size := model.boxCollider.size * model.scale
+            size := model.collider.size * model.scale
 
             tMin := -max(f32)
             tMax :=  max(f32)
@@ -68,8 +68,8 @@ CastRay :: proc(screenX, screenY: f32, camera: Camera, projType: ProjectionType,
             }
 
         } 
-        else if model.colliderType == ColliderType.Sphere {
-            r := model.sphereCollider.radius * model.scale
+        else if model.collider.type == ColliderType.Sphere {
+            r := model.collider.radius * model.scale
             r2 := r * r
             tca := Vector3DotProduct(delta, rayDir)
             d2 := Vector3DotProduct(delta, delta) - tca * tca

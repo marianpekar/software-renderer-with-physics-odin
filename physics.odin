@@ -44,7 +44,7 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         model.translation.y += GROUND_PROBE_DIST
 
         if probeResult.hit {
-            if model.colliderType == ColliderType.Box {
+            if model.collider.type == ColliderType.Box {
                 ApplyFriction(model, other)
                 ApplyStabilization(model, probeResult.normal)
 
@@ -64,7 +64,7 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         }
     }
 
-    if model.colliderType == ColliderType.Sphere {
+    if model.collider.type == ColliderType.Sphere {
         ApplyRolling(model)
     }
 
@@ -77,8 +77,8 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         center := model.translation - other.translation
         projX := abs(Vector3DotProduct(center, otherAxes[0]))
         projZ := abs(Vector3DotProduct(center, otherAxes[2]))
-        halfX := other.boxCollider.size.x * other.scale
-        halfZ := other.boxCollider.size.z * other.scale
+        halfX := other.collider.size.x * other.scale
+        halfZ := other.collider.size.z * other.scale
         return { projX - halfX, projZ - halfZ }
     }
 
@@ -93,7 +93,7 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         speed := Vector3Length(model.rigidBody.velocity)
         if speed > MIN_VELOCITY_THRESHOLD && !model.rigidBody.isMovingBySupport {
             axis := Vector3CrossProduct(WORLD_UP, model.rigidBody.velocity / speed)
-            radius := model.sphereCollider.radius * model.scale
+            radius := model.collider.radius * model.scale
             model.rigidBody.angularVelocity = axis * (speed / radius)
         } else {
             model.rigidBody.angularVelocity *= 0.1
@@ -119,7 +119,7 @@ IntegrateLinearForce :: proc(model: ^Model, deltaTime: f32) {
     model.rigidBody.velocity += model.rigidBody.force * model.rigidBody.invMass * deltaTime
     model.rigidBody.force = {}
 
-    drag := model.colliderType == ColliderType.Box ? LINEAR_DRAG : SPHERE_LINEAR_DRAG
+    drag := model.collider.type == ColliderType.Box ? LINEAR_DRAG : SPHERE_LINEAR_DRAG
     model.rigidBody.velocity *= drag
     
     if Vector3Length(model.rigidBody.velocity) > MIN_VELOCITY_THRESHOLD {
@@ -131,7 +131,7 @@ IntegrateTorque :: proc(model: ^Model, deltaTime: f32) {
     model.rigidBody.angularVelocity += model.rigidBody.torque * model.rigidBody.invMass * deltaTime
     model.rigidBody.torque = {}
 
-    drag := model.colliderType == ColliderType.Box ? ANGULAR_DRAG : SPHERE_ANGULAR_DRAG
+    drag := model.collider.type == ColliderType.Box ? ANGULAR_DRAG : SPHERE_ANGULAR_DRAG
     model.rigidBody.angularVelocity *= drag
 
     avlength  := Vector3Length(model.rigidBody.angularVelocity)
