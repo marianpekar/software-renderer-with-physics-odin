@@ -95,15 +95,15 @@ ResolveCollisions :: proc(models: []Model) {
 }
 
 GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
-    if _, ok := a.collider.(BoxCollider); ok {
-        if _, ok := b.collider.(BoxCollider); ok {
+    if HasBoxCollider(a) {
+        if HasBoxCollider(b) {
             return BoxBox(a, b)
         }
         return BoxSphere(a, b)
     }
 
-    if _, ok := a.collider.(SphereCollider); ok {
-        if _, ok := b.collider.(BoxCollider); ok {
+    if HasSphereCollider(a) {
+        if HasBoxCollider(b) {
             result := BoxSphere(b, a)
             result.normal = -result.normal
             return result

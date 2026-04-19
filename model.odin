@@ -40,8 +40,18 @@ AddBoxCollider :: proc(model: ^Model, size: Vector3 = { 1.0, 1.0, 1.0 }) {
     model.collider = BoxCollider{size = size}
 }
 
-AddSphereCollider:: proc(model: ^Model, radius: f32 = 1.0) {
+AddSphereCollider :: proc(model: ^Model, radius: f32 = 1.0) {
     model.collider = SphereCollider{radius = radius}
+}
+
+HasBoxCollider :: proc(model: ^Model) -> bool {
+    _, has := model.collider.(BoxCollider)
+    return has
+}
+
+HasSphereCollider :: proc(model: ^Model) -> bool {
+    _, has := model.collider.(SphereCollider)
+    return has
 }
 
 SetColor :: proc(model: ^Model, color: rl.Color) {

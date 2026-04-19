@@ -44,11 +44,11 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         model.translation.y += GROUND_PROBE_DIST
 
         if probeResult.hit {
-            if _, ok := model.collider.(BoxCollider); ok {
+            if HasBoxCollider(model) {
                 ApplyFriction(model, other)
                 ApplyStabilization(model, probeResult.normal)
 
-                if _, ok := other.collider.(BoxCollider); ok {
+                if HasBoxCollider(&other)  {
                     overhang := GetOverhang(model, other)
                     surfaceAngle := math.acos(abs(Vector3DotProduct(probeResult.normal, WORLD_UP)))
 
@@ -66,7 +66,7 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         }
     }
 
-    if _, ok := model.collider.(SphereCollider); ok {
+    if HasSphereCollider(model) {
         ApplyRolling(model)
     }
 
@@ -122,7 +122,7 @@ IntegrateLinearForce :: proc(model: ^Model, deltaTime: f32) {
     model.rigidBody.force = {}
 
     drag: f32
-    if _, ok := model.collider.(BoxCollider); ok { drag = LINEAR_DRAG } else { drag = SPHERE_LINEAR_DRAG }
+    if HasBoxCollider(model) { drag = LINEAR_DRAG } else { drag = SPHERE_LINEAR_DRAG }
     model.rigidBody.velocity *= drag
     
     if Vector3Length(model.rigidBody.velocity) > MIN_VELOCITY_THRESHOLD {
@@ -135,7 +135,7 @@ IntegrateTorque :: proc(model: ^Model, deltaTime: f32) {
     model.rigidBody.torque = {}
 
     drag: f32
-    if _, ok := model.collider.(BoxCollider); ok { drag = ANGULAR_DRAG } else { drag = SPHERE_ANGULAR_DRAG }
+    if HasBoxCollider(model) { drag = ANGULAR_DRAG } else { drag = SPHERE_ANGULAR_DRAG }
     model.rigidBody.angularVelocity *= drag
 
     avlength  := Vector3Length(model.rigidBody.angularVelocity)
