@@ -44,19 +44,21 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         model.translation.y += GROUND_PROBE_DIST
 
         if probeResult.hit {
-            if model.collider.type == ColliderType.Box {
+            if _, ok := model.collider.(BoxCollider); ok {
                 ApplyFriction(model, other)
                 ApplyStabilization(model, probeResult.normal)
 
-                overhang := GetOverhang(model, other)
-                surfaceAngle := math.acos(abs(Vector3DotProduct(probeResult.normal, WORLD_UP)))
-                
-                if overhang.x <= 1e-6 && overhang.y <= 1e-6 && surfaceAngle < SLIDE_ANGLE_THRESHOLD {
-                    isGrounded = true
-                }
+                if _, ok := other.collider.(BoxCollider); ok {
+                    overhang := GetOverhang(model, other)
+                    surfaceAngle := math.acos(abs(Vector3DotProduct(probeResult.normal, WORLD_UP)))
 
-                if (overhang.x > 1e-6 || overhang.y > 1e-6) && probeResult.normal.y <= -0.5 {
-                    ApplyTipping(model, probeResult.contactPoint, overhang)
+                    if overhang.x <= 1e-6 && overhang.y <= 1e-6 && surfaceAngle < SLIDE_ANGLE_THRESHOLD {
+                        isGrounded = true
+                    }
+
+                    if (overhang.x > 1e-6 || overhang.y > 1e-6) && probeResult.normal.y <= -0.5 {
+                        ApplyTipping(model, probeResult.contactPoint, overhang)
+                    }
                 }
             }
 
@@ -64,7 +66,7 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         }
     }
 
-    if model.collider.type == ColliderType.Sphere {
+    if _, ok := model.collider.(SphereCollider); ok {
         ApplyRolling(model)
     }
 
@@ -77,8 +79,8 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         center := model.translation - other.translation
         projX := abs(Vector3DotProduct(center, otherAxes[0]))
         projZ := abs(Vector3DotProduct(center, otherAxes[2]))
-        halfX := other.collider.size.x * other.scale
-        halfZ := other.collider.size.z * other.scale
+        halfX := other.collider.(BoxCollider).size.x * other.scale
+        halfZ := other.collider.(BoxCollider).size.z * other.scale
         return { projX - halfX, projZ - halfZ }
     }
 
@@ -93,7 +95,7 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         speed := Vector3Length(model.rigidBody.velocity)
         if speed > MIN_VELOCITY_THRESHOLD && !model.rigidBody.isMovingBySupport {
             axis := Vector3CrossProduct(WORLD_UP, model.rigidBody.velocity / speed)
-            radius := model.collider.radius * model.scale
+            radius := model.collider.(SphereCollider).radius * model.scale
             model.rigidBody.angularVelocity = axis * (speed / radius)
         } else {
             model.rigidBody.angularVelocity *= 0.1
@@ -119,7 +121,8 @@ IntegrateLinearForce :: proc(model: ^Model, deltaTime: f32) {
     model.rigidBody.velocity += model.rigidBody.force * model.rigidBody.invMass * deltaTime
     model.rigidBody.force = {}
 
-    drag := model.collider.type == ColliderType.Box ? LINEAR_DRAG : SPHERE_LINEAR_DRAG
+    drag: f32
+    if _, ok := model.collider.(BoxCollider); ok { drag = LINEAR_DRAG } else { drag = SPHERE_LINEAR_DRAG }
     model.rigidBody.velocity *= drag
     
     if Vector3Length(model.rigidBody.velocity) > MIN_VELOCITY_THRESHOLD {
@@ -131,7 +134,8 @@ IntegrateTorque :: proc(model: ^Model, deltaTime: f32) {
     model.rigidBody.angularVelocity += model.rigidBody.torque * model.rigidBody.invMass * deltaTime
     model.rigidBody.torque = {}
 
-    drag := model.collider.type == ColliderType.Box ? ANGULAR_DRAG : SPHERE_ANGULAR_DRAG
+    drag: f32
+    if _, ok := model.collider.(BoxCollider); ok { drag = ANGULAR_DRAG } else { drag = SPHERE_ANGULAR_DRAG }
     model.rigidBody.angularVelocity *= drag
 
     avlength  := Vector3Length(model.rigidBody.angularVelocity)

@@ -2,17 +2,17 @@ package main
 
 import "core:math"
 
-ColliderType :: enum {
-    None,
-    Box,
-    Sphere
+BoxCollider :: struct {
+    size: Vector3
 }
 
-
-Collider :: struct {
-    type: ColliderType,
-    size: Vector3,
+SphereCollider :: struct {
     radius: f32
+}
+
+Collider :: union {
+    BoxCollider,
+    SphereCollider
 }
 
 CollisionResult :: struct {
@@ -95,17 +95,20 @@ ResolveCollisions :: proc(models: []Model) {
 }
 
 GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
-    switch {
-        case a.collider.type == ColliderType.Box && b.collider.type == ColliderType.Box: 
+    if _, ok := a.collider.(BoxCollider); ok {
+        if _, ok := b.collider.(BoxCollider); ok {
             return BoxBox(a, b)
-        case a.collider.type == ColliderType.Box && b.collider.type == ColliderType.Sphere:
-            return BoxSphere(a, b)
-        case a.collider.type == ColliderType.Sphere && b.collider.type == ColliderType.Box:
+        }
+        return BoxSphere(a, b)
+    }
+
+    if _, ok := a.collider.(SphereCollider); ok {
+        if _, ok := b.collider.(BoxCollider); ok {
             result := BoxSphere(b, a)
             result.normal = -result.normal
             return result
-        case a.collider.type == ColliderType.Sphere && b.collider.type == ColliderType.Sphere: 
-            return SphereSphere(a, b)
+        }
+        return SphereSphere(a, b)
     }
     return {}
 
@@ -113,8 +116,8 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
         axesA := GetAxesFromRotationMatrix(a.rotationMatrix)
         axesB := GetAxesFromRotationMatrix(b.rotationMatrix)
 
-        colSizeA := a.collider.size * a.scale
-        colSizeB := b.collider.size * b.scale
+        colSizeA := a.collider.(BoxCollider).size * a.scale
+        colSizeB := b.collider.(BoxCollider).size * b.scale
 
         centerDiff := b.translation - a.translation
 
@@ -193,8 +196,8 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
 
     BoxSphere :: proc(a, b: ^Model) -> CollisionResult {
         axes := GetAxesFromRotationMatrix(a.rotationMatrix)
-        size := a.collider.size * a.scale
-        radius := b.collider.radius * b.scale
+        size := a.collider.(BoxCollider).size * a.scale
+        radius := b.collider.(SphereCollider).radius * b.scale
         dirAB := b.translation - a.translation
         
         closestPoint := a.translation
@@ -223,8 +226,8 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
     }
 
     SphereSphere :: proc(a, b: ^Model) -> CollisionResult {
-        rA := a.collider.radius * a.scale
-        rB := b.collider.radius * b.scale
+        rA := a.collider.(SphereCollider).radius * a.scale
+        rB := b.collider.(SphereCollider).radius * b.scale
         diff := b.translation - a.translation
         dist := Vector3Length(diff)
         sum := rA + rB

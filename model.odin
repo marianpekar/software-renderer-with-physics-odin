@@ -21,7 +21,6 @@ LoadModel :: proc(meshPath: string, texturePath: cstring, color: rl.Color = rl.W
         rotationMatrix = MakeRotationMatrix(0,0,0),
         translation = Vector3{0.0, 0.0, 0.0},
         scale = 1.0,
-        collider = { type = ColliderType.None }
     }
 
     SetColor(&model, color)
@@ -38,13 +37,11 @@ AddRigidbody :: proc(model: ^Model, isStatic: bool, bounciness: f32 = 1.0, frict
 }
 
 AddBoxCollider :: proc(model: ^Model, size: Vector3 = { 1.0, 1.0, 1.0 }) {
-    model.collider.type = ColliderType.Box
-    model.collider.size = size
+    model.collider = BoxCollider{size = size}
 }
 
 AddSphereCollider:: proc(model: ^Model, radius: f32 = 1.0) {
-    model.collider.type = ColliderType.Sphere
-    model.collider.radius = radius
+    model.collider = SphereCollider{radius = radius}
 }
 
 SetColor :: proc(model: ^Model, color: rl.Color) {
