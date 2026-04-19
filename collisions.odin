@@ -33,16 +33,16 @@ ResolveCollisions :: proc(models: []Model) {
                 
                 result := GetCollisionResult(a, b)
                 if result.hit {
-                    Correct(a, b, result)
-                    MoveStack(a, b, result)
-                    Push(a, result)
+                    Correct(a, b, result.normal, result.depth)
+                    MoveStack(a, b, result.normal)
+                    Push(a, result.normal)
                 }
             }
         }
     }
 
-    Correct :: proc(a, b: ^Model, r: CollisionResult) {
-        correction := r.normal * max(r.depth, 0.0)
+    Correct :: proc(a, b: ^Model, normal: Vector3, depth: f32) {
+        correction := normal * max(depth, 0.0)
 
         if !a.rigidBody.isStatic && !b.rigidBody.isStatic {
             a.translation -= correction * 0.5
@@ -54,19 +54,19 @@ ResolveCollisions :: proc(models: []Model) {
         }
     }
 
-    Push :: proc(m: ^Model, r: CollisionResult) {
+    Push :: proc(m: ^Model, normal: Vector3) {
         if m.rigidBody.isStatic do return
 
-        m.rigidBody.velocity -= Vector3DotProduct(m.rigidBody.velocity, r.normal) * r.normal * m.rigidBody.bounciness
+        m.rigidBody.velocity -= Vector3DotProduct(m.rigidBody.velocity, normal) * normal * m.rigidBody.bounciness
     }
 
-    MoveStack :: proc(a, b: ^Model, r: CollisionResult) {
+    MoveStack :: proc(a, b: ^Model, normal: Vector3) {
         a.rigidBody.isMovingBySupport = false
         b.rigidBody.isMovingBySupport = false
 
-        if abs(Vector3DotProduct(r.normal, WORLD_UP)) < 0.7 do return
+        if abs(Vector3DotProduct(normal, WORLD_UP)) < 0.7 do return
 
-        isABottom := Vector3DotProduct(r.normal, WORLD_UP) > 0
+        isABottom := Vector3DotProduct(normal, WORLD_UP) > 0
         support := isABottom ? a : b
         resting := isABottom ? b : a
 
@@ -74,17 +74,17 @@ ResolveCollisions :: proc(models: []Model) {
 
         if support.translation.y >= resting.translation.y do return
 
-        supportNorm := Vector3DotProduct(support.rigidBody.velocity, r.normal)
-        restingNorm := Vector3DotProduct(resting.rigidBody.velocity, r.normal)
+        supportNorm := Vector3DotProduct(support.rigidBody.velocity, normal)
+        restingNorm := Vector3DotProduct(resting.rigidBody.velocity, normal)
         if supportNorm > restingNorm {
-            resting.rigidBody.velocity += r.normal * (supportNorm - restingNorm)
+            resting.rigidBody.velocity += normal * (supportNorm - restingNorm)
         }
 
         supportSpeed := Vector3Length(support.rigidBody.velocity)
         if supportSpeed < MIN_VELOCITY_THRESHOLD do return
 
-        supportTan := support.rigidBody.velocity - r.normal * supportNorm
-        restingTan := resting.rigidBody.velocity - r.normal * restingNorm
+        supportTan := support.rigidBody.velocity - normal * supportNorm
+        restingTan := resting.rigidBody.velocity - normal * restingNorm
 
         avgFriction := (support.rigidBody.friction + resting.rigidBody.friction) * 0.5
         resting.rigidBody.velocity += (supportTan - restingTan) * avgFriction
