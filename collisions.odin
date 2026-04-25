@@ -23,21 +23,29 @@ CollisionResult :: struct {
 }
 
 ResolveCollisions :: proc(models: []Model) {
-    for i in 0..<len(models) {
-        for j in i + 1..<len(models) {
-            a := &models[i]
-            b := &models[j]
+    context.allocator = context.temp_allocator
 
-            if a.rigidBody.isStatic && b.rigidBody.isStatic do continue
-            
-            result := GetCollisionResult(a, b)
-            if result.hit {
-                Correct(a, b, result.normal, result.depth)
-                MoveStack(a, b, result.normal)
-                Push(a, result.normal)
-            }
+    bounds := GetWorldAABB(models)
+    octree := MakeOctree(bounds)
+    for i in 0..<len(models) {
+        OctreeInsert(&octree, i, GetModelAABB(&models[i]), models)
+    }
+
+    for pair in OctreeGetCandidatePairs(&octree) {
+        a := &models[pair[0]]
+        b := &models[pair[1]]
+
+        if a.rigidBody.isStatic && b.rigidBody.isStatic do continue
+
+        result := GetCollisionResult(a, b)
+        if result.hit {
+            Correct(a, b, result.normal, result.depth)
+            MoveStack(a, b, result.normal)
+            Push(a, result.normal)
         }
     }
+
+    free_all(context.temp_allocator)
 
     Correct :: proc(a, b: ^Model, normal: Vector3, depth: f32) {
         correction := normal * max(depth, 0.0)
