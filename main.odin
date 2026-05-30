@@ -75,36 +75,13 @@ main :: proc() {
         pixels = ([^]rl.Color)(raycastedMazeImage.data)
     }
 
-    player: rm.Player
-    player.mazeType = .Recursive
-
-    cursor: rm.Cursor
-    cursor.tile = 1
-
-    map_: rm.Map
-    map_.size = 16
-    map_.isTransparent = true
-    map_.show = false
-    
-    maze: rm.Maze
-    rays: rm.Rays
-
-    tiles := rm.LoadTiles("raycasted_maze/tiles")
-    mapColors := rm.MakeMapColors(tiles)
-
-    RestartMaze(&maze, &player)
+    game := rm.MakeGame()
+    rm.RestartGame(&game)
 
     for !rl.WindowShouldClose() {
         deltaTime := rl.GetFrameTime()
 
-        rm.HandleInputs(&player, &maze, &cursor, &map_, rl.GetFrameTime())
-        if player.restart do RestartMaze(&maze, &player)
-        rm.CastRays(player, &maze, &rays)
-        rm.Render(player, rays, tiles, &raycastedMazeImage)
-        if map_.show {
-            rm.RenderMap(maze, player, rays, mapColors, map_, cursor, &raycastedMazeImage)
-        }
-        rl.UpdateTexture(raycastedMazeTexture, raycastedMazeImage.data)
+        rm.UpdateGame(&game, raycastedMazeTexture, &raycastedMazeImage)
 
         HandleInputs(&selectedModel, models[:], camera, &renderMode, renderModesCount, &projectionType, deltaTime)
 
@@ -149,14 +126,4 @@ main :: proc() {
     }
 
     rl.CloseWindow()
-}
-
-RestartMaze :: proc(maze: ^rm.Maze, player: ^rm.Player) {
-    start := rm.Vec2i{rm.MAZE_WIDTH / 2 + 1, rm.MAZE_HEIGHT / 2 + 1}
-    maze^ = rm.GenerateMaze(start, player.mazeType)
-
-    player.x = f32(start.x) * rm.TILE_SIZE + rm.TILE_SIZE / 2
-    player.y = f32(start.y) * rm.TILE_SIZE + rm.TILE_SIZE / 2
-    player.angle = 0
-    player.restart = false
 }
