@@ -803,8 +803,8 @@ DrawTexelPhongShaded :: proc(
 
         interpNormal := Vector3Normalize(n1^*alpha + n2^*beta + n3^*gamma)
 
-        texX := i32(interpU * f32(texture.width )) & (texture.width  - 1)
-        texY := i32(interpV * f32(texture.height)) & (texture.height - 1)
+        texX := i32(interpU * f32(texture.width )) % texture.width
+        texY := i32(interpV * f32(texture.height)) % texture.height
         tex  := texture.pixels[texY*texture.width + texX]
 
         lightAccum := ambient

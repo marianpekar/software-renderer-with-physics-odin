@@ -9,12 +9,6 @@ HandleInputs :: proc(
     projType: ^ProjectionType,
     deltaTime: f32
 ) {
-    linearForce: f32 = (rl.IsKeyDown(rl.KeyboardKey.LEFT_SHIFT) ? 150 : 75) * deltaTime
-    if rl.IsKeyDown(rl.KeyboardKey.W) do model^.rigidBody.force.z += linearForce
-    if rl.IsKeyDown(rl.KeyboardKey.S) do model^.rigidBody.force.z -= linearForce
-    if rl.IsKeyDown(rl.KeyboardKey.A) do model^.rigidBody.force.x += linearForce
-    if rl.IsKeyDown(rl.KeyboardKey.D) do model^.rigidBody.force.x -= linearForce
-
     linearForceUp: f32 = (rl.IsKeyDown(rl.KeyboardKey.LEFT_SHIFT) ? 2000 : 1000) * deltaTime
     if rl.IsKeyDown(rl.KeyboardKey.SPACE) do model^.rigidBody.force.y += linearForceUp
 
@@ -28,10 +22,10 @@ HandleInputs :: proc(
         renderMode^ = (renderMode^ + 1) % renderModesCount
     }
 
-    if rl.IsKeyPressed(rl.KeyboardKey.KP_0) {
+    if rl.IsKeyPressed(rl.KeyboardKey.KP_8) {
         projType^ = .Perspective
     }
-    if rl.IsKeyPressed(rl.KeyboardKey.KP_1) {
+    if rl.IsKeyPressed(rl.KeyboardKey.KP_9) {
         projType^ = .Orthographic
     }
 

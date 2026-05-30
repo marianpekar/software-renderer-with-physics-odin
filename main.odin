@@ -1,5 +1,6 @@
 package main
 
+import rm "raycasted_maze"
 import rl "vendor:raylib"
 
 ProjectionType :: enum {
@@ -9,14 +10,6 @@ ProjectionType :: enum {
 
 main :: proc() {
     rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Renderer")
-
-    sphereS := LoadModel("assets/sphere.obj", "assets/asphalt.png", rl.YELLOW)
-    AddRigidbody(&sphereS, isStatic = false, bounciness = 1.9, mass = 1.0)
-    AddSphereCollider(&sphereS)
-
-    sphereM := LoadModel("assets/sphere.obj", "assets/asphalt.png", rl.RED)
-    AddRigidbody(&sphereM, isStatic = false, bounciness = 1.2, mass = 2.0)
-    AddSphereCollider(&sphereM)
 
     cubeM := LoadModel("assets/cube.obj", "assets/box.png", rl.GREEN)
     AddRigidbody(&cubeM, isStatic = false, bounciness = 1.4, mass = 3.0)
@@ -30,26 +23,22 @@ main :: proc() {
     AddRigidbody(&cubeFloor, isStatic = true)
     AddBoxCollider(&cubeFloor)
 
-    sphereS.translation = {1.0, 3.0, 1.0}
-    sphereM.translation = {0.0, 4.0, 1.0}
     cubeM.translation = {0.0, 2.0, 1.0}
     cubeL.translation = {0.0, 1.0, 1.0}
     cubeFloor.translation = {0.0, -5.0, 1.0}
-    sphereS.scale = 0.3
     cubeM.scale = 0.5
-    sphereM.scale = 0.5
     cubeFloor.scale = 2.5
     RotateAround(&cubeL, {0, 1, 0}, 30)
     RotateAround(&cubeM, {0, 1, 0}, 330)
     RotateAround(&cubeFloor, {0, 1, 1}, 0)
 
-    models := []Model{sphereS, sphereM, cubeM, cubeL, cubeFloor}
+    models := []Model{cubeM, cubeL, cubeFloor}
 
     camera := MakeCamera({0.0, 0.0, -3.0}, {0.0, -1.0, 0.0})
 
     viewMatrix := MakeViewMatrix(camera.position, camera.target)
-    light  := MakeLight({-2.0, 2.0, 1.0}, { 1.0,  1.0, 0.0}, {0.0, 0.1, 1.0, 1.0}, viewMatrix)
-    light2 := MakeLight({2.0, -2.0, 1.0}, {-1.0, -1.0, 0.0}, {0.0, 1.0, 0.0, 1.0}, viewMatrix)
+    light  := MakeLight({-2.0, 2.0, 1.0}, { 1.0,  1.0, 0.0}, {1.0, 1.0, 1.0, 1.0}, viewMatrix)
+    light2 := MakeLight({2.0, -2.0, 1.0}, {-1.0, -1.0, 0.0}, {1.0, 1.0, 1.0, 1.0}, viewMatrix)
     lights := []Light{light, light2}
 
     ambient := Vector3{0.2, 0.2, 0.2}
@@ -72,8 +61,50 @@ main :: proc() {
 
     physicsAccumulator: f32
 
+    raycastedMazeImage := rl.GenImageColor(rm.SCREEN_WIDTH, rm.SCREEN_HEIGHT, rl.BLACK)
+    raycastedMazeTexture := rl.LoadTextureFromImage(renderImage)
+    rl.ImageFormat(&raycastedMazeImage, .UNCOMPRESSED_R8G8B8A8)
+    models[0].texture = Texture{
+        width = raycastedMazeImage.width, 
+        height = raycastedMazeImage.height,
+        pixels = ([^]rl.Color)(raycastedMazeImage.data)
+    }
+    models[1].texture = Texture{
+        width = raycastedMazeImage.width, 
+        height = raycastedMazeImage.height,
+        pixels = ([^]rl.Color)(raycastedMazeImage.data)
+    }
+
+    player: rm.Player
+    player.mazeType = .Recursive
+
+    cursor: rm.Cursor
+    cursor.tile = 1
+
+    map_: rm.Map
+    map_.size = 16
+    map_.isTransparent = true
+    map_.show = false
+    
+    maze: rm.Maze
+    rays: rm.Rays
+
+    tiles := rm.LoadTiles("raycasted_maze/tiles")
+    mapColors := rm.MakeMapColors(tiles)
+
+    RestartMaze(&maze, &player)
+
     for !rl.WindowShouldClose() {
         deltaTime := rl.GetFrameTime()
+
+        rm.HandleInputs(&player, &maze, &cursor, &map_, rl.GetFrameTime())
+        if player.restart do RestartMaze(&maze, &player)
+        rm.CastRays(player, &maze, &rays)
+        rm.Render(player, rays, tiles, &raycastedMazeImage)
+        if map_.show {
+            rm.RenderMap(maze, player, rays, mapColors, map_, cursor, &raycastedMazeImage)
+        }
+        rl.UpdateTexture(raycastedMazeTexture, raycastedMazeImage.data)
 
         HandleInputs(&selectedModel, models[:], camera, &renderMode, renderModesCount, &projectionType, deltaTime)
 
@@ -112,11 +143,20 @@ main :: proc() {
 
         rl.UpdateTexture(renderTexture, renderImage.data)
         rl.DrawTexture(renderTexture, 0, 0, rl.WHITE)
-        rl.DrawFPS(10, 10)
         rl.ImageClearBackground(&renderImage, rl.BLACK)
 
         rl.EndDrawing()
     }
 
     rl.CloseWindow()
+}
+
+RestartMaze :: proc(maze: ^rm.Maze, player: ^rm.Player) {
+    start := rm.Vec2i{rm.MAZE_WIDTH / 2 + 1, rm.MAZE_HEIGHT / 2 + 1}
+    maze^ = rm.GenerateMaze(start, player.mazeType)
+
+    player.x = f32(start.x) * rm.TILE_SIZE + rm.TILE_SIZE / 2
+    player.y = f32(start.y) * rm.TILE_SIZE + rm.TILE_SIZE / 2
+    player.angle = 0
+    player.restart = false
 }
