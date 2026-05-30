@@ -61,27 +61,25 @@ main :: proc() {
 
     physicsAccumulator: f32
 
-    raycastedMazeImage := rl.GenImageColor(rm.SCREEN_WIDTH, rm.SCREEN_HEIGHT, rl.BLACK)
-    raycastedMazeTexture := rl.LoadTextureFromImage(renderImage)
-    rl.ImageFormat(&raycastedMazeImage, .UNCOMPRESSED_R8G8B8A8)
+    game := rm.MakeGame()
+
     models[0].texture = Texture{
-        width = raycastedMazeImage.width, 
-        height = raycastedMazeImage.height,
-        pixels = ([^]rl.Color)(raycastedMazeImage.data)
+        width = game.image.width, 
+        height = game.image.height,
+        pixels = ([^]rl.Color)(game.image.data)
     }
     models[1].texture = Texture{
-        width = raycastedMazeImage.width, 
-        height = raycastedMazeImage.height,
-        pixels = ([^]rl.Color)(raycastedMazeImage.data)
+        width = game.image.width, 
+        height = game.image.height,
+        pixels = ([^]rl.Color)(game.image.data)
     }
 
-    game := rm.MakeGame()
     rm.RestartGame(&game)
 
     for !rl.WindowShouldClose() {
         deltaTime := rl.GetFrameTime()
 
-        rm.UpdateGame(&game, raycastedMazeTexture, &raycastedMazeImage)
+        rm.UpdateGame(&game)
 
         HandleInputs(&selectedModel, models[:], camera, &renderMode, renderModesCount, &projectionType, deltaTime)
 

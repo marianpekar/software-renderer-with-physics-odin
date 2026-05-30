@@ -9,7 +9,9 @@ Game :: struct {
     maze: Maze,
     rays: Rays,
     tiles: Tiles,
-    mapColors: MapColors
+    mapColors: MapColors,
+    image: rl.Image,
+    texture: rl.Texture
 }
 
 MakeGame :: proc() -> Game {
@@ -30,13 +32,19 @@ MakeGame :: proc() -> Game {
     tiles := LoadTiles("raycasted_maze/tiles")
     mapColors := MakeMapColors(tiles)
 
+    image := rl.GenImageColor(SCREEN_WIDTH, SCREEN_HEIGHT, rl.BLACK)
+    rl.ImageFormat(&image, .UNCOMPRESSED_R8G8B8A8)
+    texture := rl.LoadTextureFromImage(image)
+
     game := Game{
         player = player,
         cursor = cursor,
         map_ = map_,
         maze = maze,
         rays = rays,
-        tiles = tiles
+        tiles = tiles,
+        image = image,
+        texture = texture
     }
     
     RestartGame(&game)
@@ -54,17 +62,17 @@ RestartGame :: proc(game: ^Game) {
     game.player.restart = false
 }
 
-UpdateGame :: proc(game: ^Game, texture: rl.Texture, image: ^rl.Image) {
+UpdateGame :: proc(game: ^Game) {
     HandleInputs(&game.player, &game.maze, &game.cursor, &game.map_, rl.GetFrameTime())
 
     if game.player.restart do RestartGame(game)
 
     CastRays(game.player, &game.maze, &game.rays)
 
-    Render(game.player, game.rays, game.tiles, image)
+    Render(game.player, game.rays, game.tiles, &game.image)
     if game.map_.show {
-        RenderMap(game.maze, game.player, game.rays, game.mapColors, game.map_, game.cursor, image)
+        RenderMap(game.maze, game.player, game.rays, game.mapColors, game.map_, game.cursor, &game.image)
     }
 
-    rl.UpdateTexture(texture, image.data)
+    rl.UpdateTexture(game.texture, game.image.data)
 }
