@@ -105,6 +105,10 @@ main :: proc() {
             }
         }
 
+        if selectedModel.game != nil && selectedModel.game.map_.show {
+            rm.RenderMap(selectedModel.game.maze, selectedModel.game.player, selectedModel.game.rays, selectedModel.game.mapColors, selectedModel.game.map_, selectedModel.game.cursor, &renderImage)
+        }
+
         rl.UpdateTexture(renderTexture, renderImage.data)
         rl.DrawTexture(renderTexture, 0, 0, rl.WHITE)
         rl.ImageClearBackground(&renderImage, rl.BLACK)

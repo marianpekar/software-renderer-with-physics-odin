@@ -23,8 +23,8 @@ MakeGame :: proc() -> Game {
 
     map_: Map
     map_.size = 16
-    map_.isTransparent = true
-    map_.show = false
+    map_.isTransparent = false
+    map_.show = true
     
     maze: Maze
     rays: Rays
@@ -43,6 +43,7 @@ MakeGame :: proc() -> Game {
         maze = maze,
         rays = rays,
         tiles = tiles,
+        mapColors = mapColors,
         image = image,
         texture = texture
     }
@@ -71,9 +72,6 @@ UpdateGame :: proc(game: ^Game) {
     CastRays(game.player, &game.maze, &game.rays)
 
     Render(game.player, game.rays, game.tiles, &game.image)
-    if game.map_.show {
-        RenderMap(game.maze, game.player, game.rays, game.mapColors, game.map_, game.cursor, &game.image)
-    }
 
     rl.UpdateTexture(game.texture, game.image.data)
 }

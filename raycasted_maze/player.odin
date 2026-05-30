@@ -61,8 +61,8 @@ HandleInputs :: proc(player: ^Player, maze: ^Maze, cursor: ^Cursor, map_: ^Map, 
         player.restart = true
     }
 
-    if rl.IsKeyPressed(rl.KeyboardKey.KP_ADD) do map_.size /= 2
-    if rl.IsKeyPressed(rl.KeyboardKey.KP_SUBTRACT) do map_.size *= 2
+    if rl.IsKeyPressed(rl.KeyboardKey.KP_MULTIPLY) do map_.size /= 2
+    if rl.IsKeyPressed(rl.KeyboardKey.KP_DIVIDE) do map_.size *= 2
     if map_.size < 8 do map_.size = 8
     if map_.size > 32 do map_.size = 32
 

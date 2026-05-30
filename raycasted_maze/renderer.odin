@@ -77,7 +77,7 @@ RenderMap :: proc(maze: Maze, player: Player, rays: Rays, colors: MapColors, map
     psx := i32(player.x * scale)
     psy := i32(player.y * scale)
 
-    for i in 0..<SCREEN_WIDTH {
+    for i in 0..<image.width {
         rex := i32(rays[i].hit.x * scale)
         rey := i32(rays[i].hit.y * scale)
         rl.ImageDrawLine(image, psx, psy, rex, rey, rl.RED)
