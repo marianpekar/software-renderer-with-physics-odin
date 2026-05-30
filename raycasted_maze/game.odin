@@ -48,6 +48,7 @@ MakeGame :: proc() -> Game {
     }
     
     RestartGame(&game)
+    UpdateGame(&game)
 
     return game
 }

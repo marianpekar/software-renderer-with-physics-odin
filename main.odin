@@ -11,11 +11,15 @@ ProjectionType :: enum {
 main :: proc() {
     rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Renderer")
 
-    cubeM := LoadModel("assets/cube.obj", "assets/box.png", rl.GREEN)
+    game1 := rm.MakeGame()
+    game2 := rm.MakeGame()
+    games := []rm.Game{game1, game2}
+
+    cubeM := LoadModel("assets/cube.obj", "", rl.GREEN, &game1)
     AddRigidbody(&cubeM, isStatic = false, bounciness = 1.4, mass = 3.0)
     AddBoxCollider(&cubeM)
     
-    cubeL := LoadModel("assets/cube.obj", "assets/box.png", rl.BLUE)
+    cubeL := LoadModel("assets/cube.obj", "", rl.BLUE, &game2)
     AddRigidbody(&cubeL, isStatic = false, bounciness = 1.2, mass = 5.0)
     AddBoxCollider(&cubeL)
 
@@ -61,27 +65,12 @@ main :: proc() {
 
     physicsAccumulator: f32
 
-    game := rm.MakeGame()
-
-    models[0].texture = Texture{
-        width = game.image.width, 
-        height = game.image.height,
-        pixels = ([^]rl.Color)(game.image.data)
-    }
-    models[1].texture = Texture{
-        width = game.image.width, 
-        height = game.image.height,
-        pixels = ([^]rl.Color)(game.image.data)
-    }
-
-    rm.RestartGame(&game)
-
     for !rl.WindowShouldClose() {
         deltaTime := rl.GetFrameTime()
 
-        rm.UpdateGame(&game)
-
         HandleInputs(&selectedModel, models[:], camera, &renderMode, renderModesCount, &projectionType, deltaTime)
+        
+        if selectedModel.game != nil do rm.UpdateGame(selectedModel.game)
 
         physicsAccumulator += deltaTime
         for physicsAccumulator >= PHYSICS_TIMESTEP {

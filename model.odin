@@ -1,8 +1,10 @@
 package main
 
 import rl "vendor:raylib"
+import rm "raycasted_maze"
 
 Model :: struct {
+    id: int,
     mesh: Mesh,
     texture: Texture,
     color: rl.Color,
@@ -11,16 +13,31 @@ Model :: struct {
     rotationMatrix: Matrix4x4,
     scale: f32,
     rigidBody: RigidBody,
-    collider: Collider
+    collider: Collider,
+    game: ^rm.Game
 }
 
-LoadModel :: proc(meshPath: string, texturePath: cstring, color: rl.Color = rl.WHITE) -> Model {
+LoadModel :: proc(meshPath: string, texturePath: cstring, color: rl.Color = rl.WHITE, game: ^rm.Game = nil) -> Model {
+    texture: Texture
+    if texturePath != "" {
+        texture = LoadTextureFromFile(texturePath)
+    }
+
+    if game != nil {
+        texture = Texture{
+            width = game.image.width, 
+            height = game.image.height,
+            pixels = ([^]rl.Color)(game.image.data)
+        }
+    }
+    
     model := Model{
         mesh = LoadMeshFromObjFile(meshPath),
-        texture = LoadTextureFromFile(texturePath),
+        texture = texture,
         rotationMatrix = MakeRotationMatrix(0,0,0),
         translation = Vector3{0.0, 0.0, 0.0},
         scale = 1.0,
+        game = game
     }
 
     SetColor(&model, color)
