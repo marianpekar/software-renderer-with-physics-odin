@@ -37,11 +37,11 @@ AddRigidbody :: proc(model: ^Model, isStatic: bool, bounciness: f32 = 1.0, frict
 }
 
 AddBoxCollider :: proc(model: ^Model, size: Vector3 = { 1.0, 1.0, 1.0 }) {
-    model.collider = BoxCollider{size = size}
+    model.collider = size
 }
 
 AddSphereCollider :: proc(model: ^Model, radius: f32 = 1.0) {
-    model.collider = SphereCollider{radius = radius}
+    model.collider = radius
 }
 
 HasBoxCollider :: proc(model: ^Model) -> bool {

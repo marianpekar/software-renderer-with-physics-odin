@@ -79,8 +79,8 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         center := model.translation - other.translation
         projX := abs(Vector3DotProduct(center, otherAxes[0]))
         projZ := abs(Vector3DotProduct(center, otherAxes[2]))
-        halfX := other.collider.(BoxCollider).size.x * other.scale
-        halfZ := other.collider.(BoxCollider).size.z * other.scale
+        halfX := other.collider.(BoxCollider).x * other.scale
+        halfZ := other.collider.(BoxCollider).z * other.scale
         return { projX - halfX, projZ - halfZ }
     }
 
@@ -95,7 +95,7 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         speed := Vector3Length(model.rigidBody.velocity)
         if speed > MIN_VELOCITY_THRESHOLD && !model.rigidBody.isMovingBySupport {
             axis := Vector3CrossProduct(WORLD_UP, model.rigidBody.velocity / speed)
-            radius := model.collider.(SphereCollider).radius * model.scale
+            radius := model.collider.(SphereCollider) * model.scale
             model.rigidBody.angularVelocity = axis * (speed / radius)
         } else {
             model.rigidBody.angularVelocity *= 0.1

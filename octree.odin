@@ -19,11 +19,11 @@ OctreeNode :: struct {
 GetModelAABB :: proc(model: ^Model) -> AABB {
     switch col in model.collider {
         case SphereCollider:
-            r := col.radius * model.scale
+            r := col * model.scale
             return MakeAABB(model.translation - Vector3{r, r, r}, model.translation + Vector3{r, r, r})
         case BoxCollider:
             axes := GetAxesFromRotationMatrix(model.rotationMatrix)
-            half := col.size * model.scale
+            half := col * model.scale
             rx := abs(axes[0].x)*half.x + abs(axes[1].x)*half.y + abs(axes[2].x)*half.z
             ry := abs(axes[0].y)*half.x + abs(axes[1].y)*half.y + abs(axes[2].y)*half.z
             rz := abs(axes[0].z)*half.x + abs(axes[1].z)*half.y + abs(axes[2].z)*half.z

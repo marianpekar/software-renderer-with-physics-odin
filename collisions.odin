@@ -2,13 +2,8 @@ package main
 
 import "core:math"
 
-BoxCollider :: struct {
-    size: Vector3
-}
-
-SphereCollider :: struct {
-    radius: f32
-}
+BoxCollider :: Vector3
+SphereCollider :: f32
 
 Collider :: union {
     BoxCollider,
@@ -122,8 +117,8 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
         axesA := GetAxesFromRotationMatrix(a.rotationMatrix)
         axesB := GetAxesFromRotationMatrix(b.rotationMatrix)
 
-        colSizeA := a.collider.(BoxCollider).size * a.scale
-        colSizeB := b.collider.(BoxCollider).size * b.scale
+        colSizeA := a.collider.(BoxCollider) * a.scale
+        colSizeB := b.collider.(BoxCollider) * b.scale
 
         centerDiff := b.translation - a.translation
 
@@ -202,8 +197,8 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
 
     BoxSphere :: proc(a, b: ^Model) -> CollisionResult {
         axes := GetAxesFromRotationMatrix(a.rotationMatrix)
-        size := a.collider.(BoxCollider).size * a.scale
-        radius := b.collider.(SphereCollider).radius * b.scale
+        size := a.collider.(BoxCollider) * a.scale
+        radius := b.collider.(SphereCollider) * b.scale
         dirAB := b.translation - a.translation
         
         closestPoint := a.translation
@@ -232,8 +227,8 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
     }
 
     SphereSphere :: proc(a, b: ^Model) -> CollisionResult {
-        rA := a.collider.(SphereCollider).radius * a.scale
-        rB := b.collider.(SphereCollider).radius * b.scale
+        rA := a.collider.(SphereCollider) * a.scale
+        rB := b.collider.(SphereCollider) * b.scale
         diff := b.translation - a.translation
         dist := Vector3Length(diff)
         sum := rA + rB
