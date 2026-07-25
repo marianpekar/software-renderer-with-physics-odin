@@ -117,10 +117,8 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
         axesA := GetAxesFromRotationMatrix(a.rotationMatrix)
         axesB := GetAxesFromRotationMatrix(b.rotationMatrix)
 
-        colSizeA := a.collider.(BoxCollider) * a.scale
-        colSizeB := b.collider.(BoxCollider) * b.scale
-
-        centerDiff := b.translation - a.translation
+        colliderA := a.collider.(BoxCollider) * a.scale
+        colliderB := b.collider.(BoxCollider) * b.scale
 
         axes: [15]Vector3
         axes[0] = axesA[0]
@@ -138,6 +136,8 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
             }
         }
 
+        direction := b.translation - a.translation
+
         minDepth  : f32 = max(f32)
         minNormal : Vector3
 
@@ -146,11 +146,11 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
 
             normalizedAxis := Vector3Normalize(axis)
 
-            rA := ProjectRadius(colSizeA, axesA, normalizedAxis)
-            rB := ProjectRadius(colSizeB, axesB, normalizedAxis)
+            rA := ProjectRadius(colliderA, axesA, normalizedAxis)
+            rB := ProjectRadius(colliderB, axesB, normalizedAxis)
 
-            centerProj := abs(Vector3DotProduct(centerDiff, normalizedAxis))
-            overlap    := rA + rB - centerProj
+            projection := abs(Vector3DotProduct(direction, normalizedAxis))
+            overlap    := rA + rB - projection
 
             if overlap <= 0 do return CollisionResult{hit = false}
 
@@ -160,17 +160,13 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
             }
         }
 
-        if Vector3DotProduct(centerDiff, minNormal) < 0 {
-            minNormal = -minNormal
-        }
-
-        cA := FindClosestPoint(b.translation, a.translation, axesA, colSizeA)
-        cB := FindClosestPoint(a.translation, b.translation, axesB, colSizeB)
+        cA := FindClosestPoint(b.translation, a.translation, axesA, colliderA)
+        cB := FindClosestPoint(a.translation, b.translation, axesB, colliderB)
         contactPoint := (cA + cB) * 0.5
 
         return CollisionResult{
             hit = true, 
-            normal = minNormal, 
+            normal = -minNormal if Vector3DotProduct(direction, minNormal) < 0 else minNormal,
             depth = minDepth,
             contactPoint = contactPoint
         }
