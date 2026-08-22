@@ -35,27 +35,20 @@ CastRay :: proc(screenX, screenY: f32, camera: Camera, projType: ProjectionType,
                 axis := axes[i]
                 e := Vector3DotProduct(axis, delta)
                 f := Vector3DotProduct(axis, rayDir)
+    
+                t1 := (e - size[i]) / f
+                t2 := (e + size[i]) / f
 
-                if abs(f) > 1e-6 {
-                    t1 := (e - size[i]) / f
-                    t2 := (e + size[i]) / f
+                if t1 > t2 {
+                    t1, t2 = t2, t1 
+                }
 
-                    if t1 > t2 {
-                        t1, t2 = t2, t1 
-                    }
+                tMin = max(tMin, t1)
+                tMax = min(tMax, t2)
 
-                    tMin = max(tMin, t1)
-                    tMax = min(tMax, t2)
-
-                    if tMin > tMax || tMax < 0 {
-                        modelHit = false
-                        continue
-                    }
-                } else {
-                    if -e - size[i] > 0 || -e + size[i] < 0 {
-                        modelHit = false
-                        continue
-                    }
+                if tMin > tMax || tMax < 0 {
+                    modelHit = false
+                    continue
                 }
             }
 
