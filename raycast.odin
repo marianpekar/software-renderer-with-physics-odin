@@ -27,8 +27,8 @@ CastRay :: proc(screenX, screenY: f32, camera: Camera, projType: ProjectionType,
             axes := GetAxesFromRotationMatrix(model.rotationMatrix)
             size := model.collider.(BoxCollider) * model.scale
 
-            tMin := -max(f32)
-            tMax :=  max(f32)
+            tMin := min(f32)
+            tMax := max(f32)
             modelHit := true
 
             for i in 0..<3 {
