@@ -2,21 +2,22 @@ package main
 
 import "core:math"
 
-RayHit :: struct {
+Ray :: struct {
     hit: bool,
     model: ^Model,
     position: Vector3,
     direction: Vector3
 }
 
-CastRay :: proc(screenX, screenY: f32, camera: Camera, projType: ProjectionType, models: []Model) -> RayHit {
+CastRay :: proc(screenX, screenY: f32, camera: Camera, projType: ProjectionType, models: []Model) -> Ray {
     ndcX := (screenX / f32(SCREEN_WIDTH)) * 2.0 - 1.0
     ndcY := (screenY / f32(SCREEN_HEIGHT)) * 2.0 - 1.0
 
     rayOrigin := GetRayOrigin(ndcX, ndcY, camera, projType)
-    rayDir := GetRayDirection(ndcX, ndcY, camera, projType)
 
-    hit: RayHit
+    ray: Ray
+    ray.direction = GetRayDirection(ndcX, ndcY, camera, projType)
+
     closestDist := max(f32)
 
     for &model in models {
@@ -29,12 +30,12 @@ CastRay :: proc(screenX, screenY: f32, camera: Camera, projType: ProjectionType,
 
             tMin := min(f32)
             tMax := max(f32)
-            modelHit := true
+            hit := true
 
             for i in 0..<3 {
                 axis := axes[i]
                 e := Vector3DotProduct(axis, delta)
-                f := Vector3DotProduct(axis, rayDir)
+                f := Vector3DotProduct(axis, ray.direction)
     
                 t1 := (e - size[i]) / f
                 t2 := (e + size[i]) / f
@@ -47,24 +48,23 @@ CastRay :: proc(screenX, screenY: f32, camera: Camera, projType: ProjectionType,
                 tMax = min(tMax, t2)
 
                 if tMin > tMax {
-                    modelHit = false
+                    hit = false
                     break
                 }
             }
 
-            if modelHit && tMin < closestDist {
+            if hit && tMin < closestDist {
                 closestDist = tMin
-                hit.hit = true
-                hit.model = &model
-                hit.position = rayOrigin + rayDir * tMin
-                hit.direction = rayDir
+                ray.hit = true
+                ray.model = &model
+                ray.position = rayOrigin + ray.direction * tMin
             }
 
         } 
         else if HasSphereCollider(&model) {
             r := model.collider.(SphereCollider) * model.scale
             r2 := r * r
-            tca := Vector3DotProduct(delta, rayDir)
+            tca := Vector3DotProduct(delta, ray.direction)
             d2 := Vector3DotProduct(delta, delta) - tca * tca
             
             if d2 > r2 {
@@ -78,15 +78,14 @@ CastRay :: proc(screenX, screenY: f32, camera: Camera, projType: ProjectionType,
 
             if t >= 0 && t < closestDist {
                 closestDist = t
-                hit.hit = true
-                hit.model = &model
-                hit.position = rayOrigin + rayDir * t
-                hit.direction = rayDir
+                ray.hit = true
+                ray.model = &model
+                ray.position = rayOrigin + ray.direction * t
             }
         }
     }
 
-    return hit
+    return ray
 
     GetRayOrigin :: proc(ndcX, ndcY: f32, camera: Camera, projType: ProjectionType) -> Vector3 {
         if projType == .Orthographic {
