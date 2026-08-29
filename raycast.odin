@@ -95,9 +95,7 @@ CastRay :: proc(screenX, screenY: f32, camera: Camera, projType: ProjectionType,
     }
 
     GetRayDirection :: proc(ndcX, ndcY: f32, camera: Camera, projType: ProjectionType) -> Vector3 {
-        if projType == .Orthographic {
-            return camera.forward
-        }
+        if projType == .Orthographic do return camera.forward
 
         aspect := f32(SCREEN_WIDTH) / f32(SCREEN_HEIGHT)
         tanHalfFov := math.tan_f32(FOV * 0.5 * DEG_TO_RAD)
