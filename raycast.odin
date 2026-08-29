@@ -48,7 +48,7 @@ CastRay :: proc(screenX, screenY: f32, camera: Camera, projType: ProjectionType,
 
                 if tMin > tMax || tMax < 0 {
                     modelHit = false
-                    continue
+                    break
                 }
             }
 
