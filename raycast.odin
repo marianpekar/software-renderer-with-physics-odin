@@ -88,12 +88,10 @@ CastRay :: proc(screenX, screenY: f32, camera: Camera, projType: ProjectionType,
     return ray
 
     GetRayOrigin :: proc(ndcX, ndcY: f32, camera: Camera, projType: ProjectionType) -> Vector3 {
-        if projType == .Orthographic {
-            aspect := f32(SCREEN_WIDTH) / f32(SCREEN_HEIGHT)
-            return camera.position + camera.right * (ndcX * aspect) + camera.up * (-ndcY)
-        }
-        
-        return camera.position
+        if projType == .Perspective do return camera.position
+
+        aspect := f32(SCREEN_WIDTH) / f32(SCREEN_HEIGHT)
+        return camera.position + camera.right * (ndcX * aspect) + camera.up * (-ndcY)
     }
 
     GetRayDirection :: proc(ndcX, ndcY: f32, camera: Camera, projType: ProjectionType) -> Vector3 {
