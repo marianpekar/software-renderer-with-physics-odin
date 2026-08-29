@@ -37,6 +37,15 @@ CastRay :: proc(screenX, screenY: f32, camera: Camera, projType: ProjectionType,
                 e := Vector3DotProduct(axis, delta)
                 f := Vector3DotProduct(axis, ray.direction)
     
+                if abs(f) < 1e-6 {
+                    if e < -size[i] || e > size[i] {
+                        hit = false
+                        break
+                    }
+                    continue
+                }
+
+
                 t1 := (e - size[i]) / f
                 t2 := (e + size[i]) / f
 
