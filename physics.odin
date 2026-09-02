@@ -16,16 +16,20 @@ RigidBody :: struct {
 }
 
 AddForceAtPoint :: proc(model: ^Model, force: Vector3, contactPoint: Vector3) {
-    model.rigidBody.force += force
+    rb, has_rb := &model.rigidBody.(RigidBody)
+    if !has_rb do return
+
+    rb.force += force
 
     r := contactPoint - model.translation
     torque := Vector3CrossProduct(r, force)
-    model.rigidBody.torque += torque
+    rb.torque += torque
 }
 
 ApplyPhysics :: proc(models: []Model, deltaTime: f32) {
     for &model in models {
-        if model.rigidBody.isStatic do continue
+        rb, has_rb := model.rigidBody.?
+        if !has_rb || rb.isStatic do continue
 
         ApplyGravity(&model, models, deltaTime)
         IntegrateLinearForce(&model, deltaTime)
@@ -70,8 +74,10 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         ApplyRolling(model)
     }
 
+    rb := &model.rigidBody.(RigidBody)
+
     if !isGrounded {
-        model.rigidBody.velocity += GRAVITY * deltaTime
+        rb.velocity += GRAVITY * deltaTime
     }
 
     GetOverhang :: proc(model: ^Model, other: Model) -> Vector2 {
@@ -85,27 +91,33 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
     }
 
     ApplyFriction :: proc(model: ^Model, other: Model) {
-        avgFriction := (model.rigidBody.friction + other.rigidBody.friction) * 0.5
-        model.rigidBody.force.x *= avgFriction
-        model.rigidBody.force.z *= avgFriction
-        model.rigidBody.torque.y *= avgFriction
+        rbo, has_rbo := other.rigidBody.?
+        avgFriction := (model.rigidBody.?.friction + rbo.friction) * 0.5 if has_rbo else model.rigidBody.?.friction 
+
+        rb := &model.rigidBody.(RigidBody)
+        rb.force.x *= avgFriction
+        rb.force.z *= avgFriction
+        rb.torque.y *= avgFriction
     }
 
     ApplyRolling :: proc(model: ^Model) {
-        speed := Vector3Length(model.rigidBody.velocity)
-        if speed > MIN_VELOCITY_THRESHOLD && !model.rigidBody.isMovingBySupport {
-            axis := Vector3CrossProduct(WORLD_UP, model.rigidBody.velocity / speed)
+        rb := &model.rigidBody.(RigidBody)
+
+        speed := Vector3Length(rb.velocity)
+        if speed > MIN_VELOCITY_THRESHOLD && !rb.isMovingBySupport {
+            axis := Vector3CrossProduct(WORLD_UP, rb.velocity / speed)
             radius := model.collider.(SphereCollider) * model.scale
-            model.rigidBody.angularVelocity = axis * (speed / radius)
+            rb.angularVelocity = axis * (speed / radius)
         } else {
-            model.rigidBody.angularVelocity *= 0.1
+            rb.angularVelocity *= 0.1
         }   
     }
 
     ApplyStabilization :: proc(model: ^Model, normal: Vector3) {
         closestUp  := FindClosestUpAxis(model.rotationMatrix, normal)
         correction := Vector3CrossProduct(closestUp, normal)
-        model.rigidBody.torque += correction * STABILIZATION_STRENGTH
+        rb := &model.rigidBody.(RigidBody)
+        rb.torque += correction * STABILIZATION_STRENGTH
     }
 
     ApplyTipping :: proc(model: ^Model, contactPoint: Vector3, overhang: Vector2) {
@@ -113,34 +125,37 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
         gravTorque := Vector3CrossProduct(rContact, GRAVITY)
         if overhang.x > 1e-6 do gravTorque.x -= overhang.x
         if overhang.y > 1e-6 do gravTorque.z -= overhang.y
-        model.rigidBody.torque += Vector3Normalize(gravTorque) * model.rigidBody.mass * TIPPING_STRENGTH
+        rb := &model.rigidBody.(RigidBody)
+        rb.torque += Vector3Normalize(gravTorque) * rb.mass * TIPPING_STRENGTH
     }
 }
 
 IntegrateLinearForce :: proc(model: ^Model, deltaTime: f32) {
-    model.rigidBody.velocity += model.rigidBody.force * model.rigidBody.invMass * deltaTime
-    model.rigidBody.force = {}
+    rb := &model.rigidBody.(RigidBody)
+    rb.velocity += rb.force * rb.invMass * deltaTime
+    rb.force = {}
 
     drag: f32
     if HasBoxCollider(model) { drag = LINEAR_DRAG } else { drag = SPHERE_LINEAR_DRAG }
-    model.rigidBody.velocity *= drag
+    rb.velocity *= drag
     
-    if Vector3Length(model.rigidBody.velocity) > MIN_VELOCITY_THRESHOLD {
-        model.translation += model.rigidBody.velocity * deltaTime
+    if Vector3Length(rb.velocity) > MIN_VELOCITY_THRESHOLD {
+        model.translation += rb.velocity * deltaTime
     }
 }
 
 IntegrateTorque :: proc(model: ^Model, deltaTime: f32) {
-    model.rigidBody.angularVelocity += model.rigidBody.torque * model.rigidBody.invMass * deltaTime
-    model.rigidBody.torque = {}
+    rb := &model.rigidBody.(RigidBody)
+    rb.angularVelocity += rb.torque * rb.invMass * deltaTime
+    rb.torque = {}
 
     drag: f32
     if HasBoxCollider(model) { drag = ANGULAR_DRAG } else { drag = SPHERE_ANGULAR_DRAG }
-    model.rigidBody.angularVelocity *= drag
+    rb.angularVelocity *= drag
 
-    avlength  := Vector3Length(model.rigidBody.angularVelocity)
+    avlength  := Vector3Length(rb.angularVelocity)
     if avlength > MIN_ANGULAR_VELOCITY_THRESHOLD {
-        axis := model.rigidBody.angularVelocity / avlength
+        axis := rb.angularVelocity / avlength
         angle := avlength * deltaTime
         delta := MakeRotationMatrixAxisAngle(axis, angle)
         model.rotationMatrix = Mat4Mul(delta, model.rotationMatrix)

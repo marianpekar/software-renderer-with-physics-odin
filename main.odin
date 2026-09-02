@@ -27,7 +27,6 @@ main :: proc() {
     AddBoxCollider(&cubeL)
 
     cubeFloor := LoadModel("assets/cube.obj", "assets/box.png")
-    AddRigidbody(&cubeFloor, isStatic = true)
     AddBoxCollider(&cubeFloor)
 
     sphereS.translation = {1.0, 3.0, 1.0}

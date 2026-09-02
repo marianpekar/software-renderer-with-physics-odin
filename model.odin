@@ -10,7 +10,7 @@ Model :: struct {
     translation: Vector3,
     rotationMatrix: Matrix4x4,
     scale: f32,
-    rigidBody: RigidBody,
+    rigidBody: Maybe(RigidBody),
     collider: Collider
 }
 
@@ -28,12 +28,14 @@ LoadModel :: proc(meshPath: string, texturePath: cstring, color: rl.Color = rl.W
     return model
 }
 
-AddRigidbody :: proc(model: ^Model, isStatic: bool, bounciness: f32 = 1.0, friction: f32 = 0.5, mass: f32 = 1.0) {
-    model.rigidBody.mass = mass
-    model.rigidBody.invMass = 1.0 / mass
-    model.rigidBody.bounciness = bounciness
-    model.rigidBody.friction = friction
-    model.rigidBody.isStatic = isStatic
+AddRigidbody :: proc(model: ^Model, isStatic: bool = false, bounciness: f32 = 1.0, friction: f32 = 0.5, mass: f32 = 1.0) {
+    model.rigidBody = RigidBody{
+        mass = mass,
+        invMass = 1.0 / mass,
+        bounciness = bounciness,
+        friction = friction,
+        isStatic = isStatic
+    }
 }
 
 AddBoxCollider :: proc(model: ^Model, size: Vector3 = { 1.0, 1.0, 1.0 }) {

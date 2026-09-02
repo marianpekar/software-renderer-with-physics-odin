@@ -30,7 +30,9 @@ ResolveCollisions :: proc(models: []Model) {
         a := &models[pair[0]]
         b := &models[pair[1]]
 
-        if a.rigidBody.isStatic && b.rigidBody.isStatic do continue
+        rba, has_rba := a.rigidBody.?
+        rbb, has_rbb := b.rigidBody.?
+        if (!has_rba || rba.isStatic) && (!has_rbb || rbb.isStatic) do continue
 
         result := GetCollisionResult(a, b)
         if result.hit {
@@ -45,25 +47,32 @@ ResolveCollisions :: proc(models: []Model) {
     Correct :: proc(a, b: ^Model, normal: Vector3, depth: f32) {
         correction := normal * max(depth, 0.0)
 
-        if !a.rigidBody.isStatic && !b.rigidBody.isStatic {
+        rba, has_rba := a.rigidBody.?
+        rbb, has_rbb := b.rigidBody.?
+
+        if (has_rba && !a.rigidBody.?.isStatic) && (has_rbb && !b.rigidBody.?.isStatic) {
             a.translation -= correction * 0.5
             b.translation += correction * 0.5
-        } else if !a.rigidBody.isStatic {
+        } else if !has_rba || !a.rigidBody.?.isStatic {
             a.translation -= correction
-        } else if !b.rigidBody.isStatic {
+        } else if !has_rbb || !b.rigidBody.?.isStatic {
             b.translation += correction
         }
     }
 
     Push :: proc(m: ^Model, normal: Vector3) {
-        if m.rigidBody.isStatic do return
-
-        m.rigidBody.velocity -= Vector3DotProduct(m.rigidBody.velocity, normal) * normal * m.rigidBody.bounciness
+        rb, has_rb := &m.rigidBody.(RigidBody)
+        if !has_rb || rb.isStatic do return
+        
+        rb.velocity -= Vector3DotProduct(rb.velocity, normal) * normal * rb.bounciness
     }
 
     MoveStack :: proc(a, b: ^Model, normal: Vector3) {
-        a.rigidBody.isMovingBySupport = false
-        b.rigidBody.isMovingBySupport = false
+        rba, has_rba := &a.rigidBody.(RigidBody)
+        rbb, has_rbb := &b.rigidBody.(RigidBody)
+
+        if has_rba do rba.isMovingBySupport = false
+        if has_rbb do rbb.isMovingBySupport = false
 
         if abs(Vector3DotProduct(normal, WORLD_UP)) < 0.7 do return
 
@@ -71,27 +80,32 @@ ResolveCollisions :: proc(models: []Model) {
         support := isABottom ? a : b
         resting := isABottom ? b : a
 
-        if resting.rigidBody.isStatic do return
+        rbr, has_rbr := &resting.rigidBody.(RigidBody)
+        if !has_rbr || rbr.isStatic do return
 
         if support.translation.y >= resting.translation.y do return
 
-        supportNorm := Vector3DotProduct(support.rigidBody.velocity, normal)
-        restingNorm := Vector3DotProduct(resting.rigidBody.velocity, normal)
+        rbs, has_rbs := &support.rigidBody.(RigidBody)
+
+        if !has_rbs || !has_rbr do return
+
+        supportNorm := Vector3DotProduct(rbs.velocity, normal)
+        restingNorm := Vector3DotProduct(rbr.velocity, normal)
         if supportNorm > restingNorm {
-            resting.rigidBody.velocity += normal * (supportNorm - restingNorm)
+            rbr.velocity += normal * (supportNorm - restingNorm)
         }
 
-        supportSpeed := Vector3Length(support.rigidBody.velocity)
+        supportSpeed := Vector3Length(rbs.velocity)
         if supportSpeed < MIN_VELOCITY_THRESHOLD do return
 
-        supportTan := support.rigidBody.velocity - normal * supportNorm
-        restingTan := resting.rigidBody.velocity - normal * restingNorm
+        supportTan := rbs.velocity - normal * supportNorm
+        restingTan := rbr.velocity - normal * restingNorm
 
-        avgFriction := (support.rigidBody.friction + resting.rigidBody.friction) * 0.5
-        resting.rigidBody.velocity += (supportTan - restingTan) * avgFriction
-        resting.rigidBody.angularVelocity.y = support.rigidBody.angularVelocity.y
+        avgFriction := (rbs.friction + rbr.friction) * 0.5
+        rbr.velocity += (supportTan - restingTan) * avgFriction
+        rbr.angularVelocity.y = rbs.angularVelocity.y
 
-        resting.rigidBody.isMovingBySupport = true
+        rbr.isMovingBySupport = true
     }
 }
 
