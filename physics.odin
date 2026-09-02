@@ -92,7 +92,7 @@ ApplyGravity :: proc(model: ^Model, models: []Model, deltaTime: f32) {
 
     ApplyFriction :: proc(model: ^Model, other: Model) {
         rbo, has_rbo := other.rigidBody.?
-        avgFriction := (model.rigidBody.?.friction + rbo.friction) * 0.5 if has_rbo else model.rigidBody.?.friction 
+        avgFriction := (model.rigidBody.?.friction + rbo.friction) * 0.5 if has_rbo else (model.rigidBody.?.friction + 1.0) * 0.5
 
         rb := &model.rigidBody.(RigidBody)
         rb.force.x *= avgFriction
