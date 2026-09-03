@@ -30,6 +30,8 @@ ResolveCollisions :: proc(models: []Model) {
         a := &models[pair[0]]
         b := &models[pair[1]]
 
+        if a.collider == nil || b.collider == nil do continue
+
         rba, has_rba := a.rigidBody.?
         rbb, has_rbb := b.rigidBody.?
         if (!has_rba || rba.isStatic) && (!has_rbb || rbb.isStatic) do continue
@@ -114,7 +116,9 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
         if HasBoxCollider(b) {
             return BoxBox(a, b)
         }
-        return BoxSphere(a, b)
+        if HasSphereCollider(b) {
+            return BoxSphere(a, b)
+        }
     }
 
     if HasSphereCollider(a) {
@@ -123,7 +127,9 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
             result.normal = -result.normal
             return result
         }
-        return SphereSphere(a, b)
+        if HasSphereCollider(b) {
+            return SphereSphere(a, b)
+        }
     }
     return {}
 

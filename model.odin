@@ -21,6 +21,7 @@ LoadModel :: proc(meshPath: string, texturePath: cstring, color: rl.Color = rl.W
         rotationMatrix = MakeRotationMatrix(0,0,0),
         translation = Vector3{0.0, 0.0, 0.0},
         scale = 1.0,
+        collider = nil
     }
 
     SetColor(&model, color)
