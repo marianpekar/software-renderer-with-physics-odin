@@ -113,23 +113,13 @@ ResolveCollisions :: proc(models: []Model) {
 
 GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
     if HasBoxCollider(a) {
-        if HasBoxCollider(b) {
-            return BoxBox(a, b)
-        }
-        if HasSphereCollider(b) {
-            return BoxSphere(a, b)
-        }
+        if    HasBoxCollider(b) do return    BoxBox(a, b)
+        if HasSphereCollider(b) do return BoxSphere(a, b, false)
     }
 
     if HasSphereCollider(a) {
-        if HasBoxCollider(b) {
-            result := BoxSphere(b, a)
-            result.normal = -result.normal
-            return result
-        }
-        if HasSphereCollider(b) {
-            return SphereSphere(a, b)
-        }
+        if    HasBoxCollider(b) do return    BoxSphere(b, a, true)
+        if HasSphereCollider(b) do return SphereSphere(a, b)
     }
     return {}
 
@@ -211,7 +201,7 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
         }
     }
 
-    BoxSphere :: proc(a, b: ^Model) -> CollisionResult {
+    BoxSphere :: proc(a, b: ^Model, flipNormal: bool) -> CollisionResult {
         axes := GetAxesFromRotationMatrix(a.rotationMatrix)
         size := a.collider.(BoxCollider) * a.scale
         radius := b.collider.(SphereCollider) * b.scale
@@ -236,7 +226,7 @@ GetCollisionResult :: proc(a, b: ^Model) -> CollisionResult {
 
         return CollisionResult{
             hit = true,
-            normal = normal,
+            normal = -normal if flipNormal else normal,
             depth = radius - dist,
             contactPoint = closestPoint,
         }
